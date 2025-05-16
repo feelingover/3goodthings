@@ -1,5 +1,6 @@
 # local
 .clinerules/*_local.md
+.env
 
 # Logs
 logs
