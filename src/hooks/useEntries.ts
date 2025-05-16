@@ -159,6 +159,14 @@ export function useEntries(): UseEntriesReturn {
         
         // 全エントリーリストも更新
         await loadAllEntries();
+      } else {
+        // エラーログを出力
+        console.warn(`saveItemComment: アイテムが見つかりません。date: ${date}, itemIndex: ${itemIndex}`);
+        if (!entry) {
+          console.warn('指定された日付のエントリーが存在しません');
+        } else if (!entry.items[itemIndex]) {
+          console.warn(`指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`);
+        }
       }
     } catch (err) {
       setError(err as Error);
@@ -205,6 +213,14 @@ export function useEntries(): UseEntriesReturn {
         
         // 全エントリーリストも更新
         await loadAllEntries();
+      } else {
+        // エラーログを出力
+        console.warn(`markItemCommentRequested: アイテムが見つかりません。date: ${date}, itemIndex: ${itemIndex}`);
+        if (!entry) {
+          console.warn('指定された日付のエントリーが存在しません');
+        } else if (!entry.items[itemIndex]) {
+          console.warn(`指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`);
+        }
       }
     } catch (err) {
       setError(err as Error);
