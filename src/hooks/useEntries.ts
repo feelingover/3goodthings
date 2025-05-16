@@ -133,6 +133,15 @@ export function useEntries(): UseEntriesReturn {
         
         // 全エントリーリストも更新
         await loadAllEntries();
+      } else {
+        // エラーログを出力
+        const errorMessage = `saveAiComment: 指定された日付のエントリーが存在しません。date: ${date}`;
+        console.warn(errorMessage);
+        
+        // エラー状態を設定して上流コンポーネントでハンドリングできるようにする
+        const error = new Error(errorMessage);
+        setError(error);
+        throw error;
       }
     } catch (err) {
       setError(err as Error);
@@ -161,12 +170,16 @@ export function useEntries(): UseEntriesReturn {
         await loadAllEntries();
       } else {
         // エラーログを出力
-        console.warn(`saveItemComment: アイテムが見つかりません。date: ${date}, itemIndex: ${itemIndex}`);
-        if (!entry) {
-          console.warn('指定された日付のエントリーが存在しません');
-        } else if (!entry.items[itemIndex]) {
-          console.warn(`指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`);
-        }
+        const errorMessage = !entry 
+          ? `saveItemComment: 指定された日付のエントリーが存在しません。date: ${date}`
+          : `saveItemComment: 指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`;
+        
+        console.warn(errorMessage);
+        
+        // エラー状態を設定して上流コンポーネントでハンドリングできるようにする
+        const error = new Error(errorMessage);
+        setError(error);
+        throw error;
       }
     } catch (err) {
       setError(err as Error);
@@ -190,6 +203,15 @@ export function useEntries(): UseEntriesReturn {
         
         // 全エントリーリストも更新
         await loadAllEntries();
+      } else {
+        // エラーログを出力
+        const errorMessage = `markCommentRequested: 指定された日付のエントリーが存在しません。date: ${date}`;
+        console.warn(errorMessage);
+        
+        // エラー状態を設定して上流コンポーネントでハンドリングできるようにする
+        const error = new Error(errorMessage);
+        setError(error);
+        throw error;
       }
     } catch (err) {
       setError(err as Error);
@@ -215,12 +237,16 @@ export function useEntries(): UseEntriesReturn {
         await loadAllEntries();
       } else {
         // エラーログを出力
-        console.warn(`markItemCommentRequested: アイテムが見つかりません。date: ${date}, itemIndex: ${itemIndex}`);
-        if (!entry) {
-          console.warn('指定された日付のエントリーが存在しません');
-        } else if (!entry.items[itemIndex]) {
-          console.warn(`指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`);
-        }
+        const errorMessage = !entry 
+          ? `markItemCommentRequested: 指定された日付のエントリーが存在しません。date: ${date}`
+          : `markItemCommentRequested: 指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`;
+        
+        console.warn(errorMessage);
+        
+        // エラー状態を設定して上流コンポーネントでハンドリングできるようにする
+        const error = new Error(errorMessage);
+        setError(error);
+        throw error;
       }
     } catch (err) {
       setError(err as Error);
