@@ -8,7 +8,7 @@
 }
 
 /* 単一項目用のAIコメントスタイル */
-.ai-comment-item {
+.ai-comment-item-container {
   margin: 10px 0;
   padding: 12px;
   background-color: #f8f9fa;
