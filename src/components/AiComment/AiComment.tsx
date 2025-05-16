@@ -52,7 +52,7 @@ export function AiCommentItem({
       setIsLoading(true);
       setError(null);
       
-      const aiComment = await getAiCommentForItem(item);
+      const aiComment = await getAiCommentForItem(item, checkNetworkConnection);
       setComment(aiComment);
       onCommentSaved(itemIndex, aiComment);
       
