@@ -3,6 +3,7 @@ import { EntryForm } from './components/EntryForm/EntryForm';
 import { AiComment } from './components/AiComment/AiComment';
 import { EntryList } from './components/EntryList/EntryList';
 import { useEntries } from './hooks/useEntries';
+import { AiCommentItem } from './components/AiComment/AiComment';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
 import type { DailyEntry } from './types';
 import './App.css';
@@ -10,7 +11,8 @@ import './App.css';
 function App() {
   const [activeView, setActiveView] = useState<'today' | 'history'>('today');
   const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null);
-  const { todayEntry, allEntries, isLoading, saveEntry, saveAiComment, markCommentRequested } = useEntries();
+  const { todayEntry, allEntries, isLoading, saveEntry, saveAiComment, markCommentRequested,
+          saveItemComment, markItemCommentRequested } = useEntries();
   const { isOnline } = useNetworkStatus();
 
   // 選択されたエントリーのリセット
@@ -41,6 +43,24 @@ function App() {
       await markCommentRequested(todayEntry.date);
     } else if (selectedEntry) {
       await markCommentRequested(selectedEntry.date);
+    }
+  };
+  
+  // 項目ごとのコメント保存ハンドラ
+  const handleSaveItemComment = async (itemIndex: number, comment: string) => {
+    if (activeView === 'today' && todayEntry) {
+      await saveItemComment(todayEntry.date, itemIndex, comment);
+    } else if (selectedEntry) {
+      await saveItemComment(selectedEntry.date, itemIndex, comment);
+    }
+  };
+
+  // 項目ごとのコメントリクエスト済みマークハンドラ
+  const handleItemCommentRequested = async (itemIndex: number) => {
+    if (activeView === 'today' && todayEntry) {
+      await markItemCommentRequested(todayEntry.date, itemIndex);
+    } else if (selectedEntry) {
+      await markItemCommentRequested(selectedEntry.date, itemIndex);
     }
   };
 
@@ -101,13 +121,39 @@ function App() {
           />
           
           {todayEntry && todayEntry.items.length > 0 && (
-            <AiComment
-              items={todayEntry.items.map(item => item.content)}
-              initialComment={todayEntry.aiComment}
-              hasRequestedComment={todayEntry.hasRequestedComment}
-              onCommentSaved={handleSaveComment}
-              onCommentRequested={handleCommentRequested}
-            />
+            <div>
+              {/* 各項目のAIコメント */}
+              <div className="item-comments">
+                <h3>項目ごとのコメント</h3>
+                {todayEntry.items.map((item, index) => (
+                  <div key={index} className="item-comment-container">
+                    <div className="item-content-display">
+                      <strong>{index + 1}.</strong> {item.content}
+                    </div>
+                    <AiCommentItem
+                      item={item.content}
+                      itemIndex={index}
+                      initialComment={item.aiComment}
+                      hasRequestedComment={item.hasRequestedComment || false}
+                      onCommentSaved={handleSaveItemComment}
+                      onCommentRequested={handleItemCommentRequested}
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              {/* 従来の全体コメント（後方互換性のために維持） */}
+              <div className="daily-comment">
+                <h3>1日のまとめコメント</h3>
+                <AiComment
+                  items={todayEntry.items.map(item => item.content)}
+                  initialComment={todayEntry.aiComment}
+                  hasRequestedComment={todayEntry.hasRequestedComment}
+                  onCommentSaved={handleSaveComment}
+                  onCommentRequested={handleCommentRequested}
+                />
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -135,13 +181,37 @@ function App() {
                 ))}
               </div>
               
-              <AiComment
-                items={selectedEntry.items.map(item => item.content)}
-                initialComment={selectedEntry.aiComment}
-                hasRequestedComment={selectedEntry.hasRequestedComment}
-                onCommentSaved={handleSaveComment}
-                onCommentRequested={handleCommentRequested}
-              />
+              {/* 各項目のAIコメント */}
+              <div className="item-comments">
+                <h3>項目ごとのコメント</h3>
+                {selectedEntry.items.map((item, index) => (
+                  <div key={index} className="item-comment-container">
+                    <div className="item-content-display">
+                      <strong>{index + 1}.</strong> {item.content}
+                    </div>
+                    <AiCommentItem
+                      item={item.content}
+                      itemIndex={index}
+                      initialComment={item.aiComment}
+                      hasRequestedComment={item.hasRequestedComment || false}
+                      onCommentSaved={handleSaveItemComment}
+                      onCommentRequested={handleItemCommentRequested}
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              {/* 従来の全体コメント（後方互換性のために維持） */}
+              <div className="daily-comment">
+                <h3>1日のまとめコメント</h3>
+                <AiComment
+                  items={selectedEntry.items.map(item => item.content)}
+                  initialComment={selectedEntry.aiComment}
+                  hasRequestedComment={selectedEntry.hasRequestedComment}
+                  onCommentSaved={handleSaveComment}
+                  onCommentRequested={handleCommentRequested}
+                />
+              </div>
             </div>
           )}
         </div>

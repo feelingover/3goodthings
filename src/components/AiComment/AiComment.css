@@ -7,6 +7,15 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* 単一項目用のAIコメントスタイル */
+.ai-comment-item {
+  margin: 10px 0;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #2ecc71;
+}
+
 .ai-comment-content {
   padding: 15px;
   background-color: white;
@@ -82,4 +91,19 @@
 
 .ai-comment-offline p:last-child {
   margin-bottom: 0;
+}
+
+/* 項目ごとのコメントスタイル */
+.ai-comment-item .ai-comment-actions {
+  margin: 5px 0;
+}
+
+.ai-comment-item .get-comment-button {
+  font-size: 14px;
+  padding: 6px 12px;
+}
+
+.ai-comment-item .ai-comment-content {
+  padding: 10px;
+  margin-top: 5px;
 }

@@ -21,6 +21,8 @@ interface UseEntriesReturn {
   getEntryByDate: (date: string) => Promise<DailyEntry | null>;
   saveAiComment: (date: string, comment: string) => Promise<void>;
   markCommentRequested: (date: string) => Promise<void>;
+  saveItemComment: (date: string, itemIndex: number, comment: string) => Promise<void>;
+  markItemCommentRequested: (date: string, itemIndex: number) => Promise<void>;
 }
 
 export function useEntries(): UseEntriesReturn {
@@ -76,7 +78,8 @@ export function useEntries(): UseEntriesReturn {
       
       const entryItems: EntryItem[] = items.map((content) => ({
         content,
-        createdAt: new Date()
+        createdAt: new Date(),
+        hasRequestedComment: false
       }));
       
       if (entry) {
@@ -136,6 +139,32 @@ export function useEntries(): UseEntriesReturn {
       throw err;
     }
   };
+  
+  // 特定の項目に対するAIコメントを保存
+  const saveItemComment = async (date: string, itemIndex: number, comment: string): Promise<void> => {
+    try {
+      const entry = await db.getDailyEntryByDate(date);
+      
+      if (entry && entry.items[itemIndex]) {
+        // 項目のコメントを更新
+        entry.items[itemIndex].aiComment = comment;
+        entry.items[itemIndex].hasRequestedComment = true;
+        
+        await db.saveDailyEntry(entry);
+        
+        // 今日の日付の場合、todayEntryを更新
+        if (date === getTodayDate()) {
+          setTodayEntry({...entry});
+        }
+        
+        // 全エントリーリストも更新
+        await loadAllEntries();
+      }
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    }
+  };
 
   // コメントをリクエスト済みとしてマーク
   const markCommentRequested = async (date: string): Promise<void> => {
@@ -144,6 +173,29 @@ export function useEntries(): UseEntriesReturn {
       
       if (entry) {
         entry.hasRequestedComment = true;
+        await db.saveDailyEntry(entry);
+        
+        // 今日の日付の場合、todayEntryを更新
+        if (date === getTodayDate()) {
+          setTodayEntry({...entry});
+        }
+        
+        // 全エントリーリストも更新
+        await loadAllEntries();
+      }
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    }
+  };
+  
+  // 特定の項目のコメントをリクエスト済みとしてマーク
+  const markItemCommentRequested = async (date: string, itemIndex: number): Promise<void> => {
+    try {
+      const entry = await db.getDailyEntryByDate(date);
+      
+      if (entry && entry.items[itemIndex]) {
+        entry.items[itemIndex].hasRequestedComment = true;
         await db.saveDailyEntry(entry);
         
         // 今日の日付の場合、todayEntryを更新
@@ -168,6 +220,8 @@ export function useEntries(): UseEntriesReturn {
     saveEntry,
     getEntryByDate,
     saveAiComment,
-    markCommentRequested
+    markCommentRequested,
+    saveItemComment,
+    markItemCommentRequested
   };
 }
