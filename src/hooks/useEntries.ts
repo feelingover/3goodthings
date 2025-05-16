@@ -169,17 +169,10 @@ export function useEntries(): UseEntriesReturn {
         // 全エントリーリストも更新
         await loadAllEntries();
       } else {
-        // エラーログを出力
         const errorMessage = !entry 
           ? `saveItemComment: 指定された日付のエントリーが存在しません。date: ${date}`
           : `saveItemComment: 指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`;
-        
-        console.warn(errorMessage);
-        
-        // エラー状態を設定して上流コンポーネントでハンドリングできるようにする
-        const error = new Error(errorMessage);
-        setError(error);
-        throw error;
+        handleError(errorMessage, setError);
       }
     } catch (err) {
       setError(err as Error);
