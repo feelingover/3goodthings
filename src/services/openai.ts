@@ -12,10 +12,13 @@ const openai = new OpenAI({
  * @param goodThing 1つの「良いこと」
  * @returns AIからのコメント
  */
-export async function getAiCommentForItem(goodThing: string): Promise<string> {
+export async function getAiCommentForItem(
+  goodThing: string,
+  checkNetworkConnection: () => boolean
+): Promise<string> {
   try {
     // ネットワーク接続がない場合はエラー
-    if (!navigator.onLine) {
+    if (!checkNetworkConnection()) {
       throw new Error('ネットワーク接続がありません');
     }
 
