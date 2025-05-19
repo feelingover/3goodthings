@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getAiComment, getAiCommentForItem } from '../../services/openai';
+import { getAiComment, getAiCommentForItem, checkNetworkConnection } from '../../services/openai';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import './AiComment.css';
 
@@ -20,7 +20,7 @@ interface AiCommentProps {
   onCommentRequested: () => void;
 }
 
-// 単一項目用のAIコメントコンポーネント
+  // 単一項目用のAIコメントコンポーネント
 export function AiCommentItem({
   item,
   itemIndex,
@@ -33,6 +33,15 @@ export function AiCommentItem({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { isOnline } = useNetworkStatus();
+  
+  // デバッグ用：コメント表示状態のログ
+  console.log(`AiCommentItem[${itemIndex}]:`, {
+    item: item ? (item.length > 20 ? item.substring(0, 20) + '...' : item) : 'undefined',
+    initialComment: initialComment ? (initialComment.length > 20 ? initialComment.substring(0, 20) + '...' : initialComment) : 'undefined',
+    comment: comment ? (comment.length > 20 ? comment.substring(0, 20) + '...' : comment) : 'undefined',
+    hasRequestedComment,
+    isOnline
+  });
 
   // コメント取得ハンドラ
   const handleGetComment = async () => {
@@ -72,8 +81,8 @@ export function AiCommentItem({
       return <p className="ai-comment-info">項目を入力するとAIからのコメントを表示できます</p>;
     }
 
-    // コメントが既に保存済みの場合
-    if (comment && hasRequestedComment) {
+    // コメントが保存済みの場合（コメントがあるか、リクエスト済みの場合）
+    if (comment) {
       return (
         <div className="ai-comment-content">
           <p className="comment-text">{comment}</p>
@@ -82,7 +91,7 @@ export function AiCommentItem({
     }
 
     // オンラインでコメントがまだ取得されていない場合
-    if (isOnline && !hasRequestedComment) {
+    if (isOnline) {
       return (
         <div className="ai-comment-actions">
           <button 

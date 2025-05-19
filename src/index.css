@@ -1,68 +1,147 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  /* Material Design 3のカラーパレット */
+  --md-primary: #6750A4;
+  --md-primary-light: #D0BCFF;
+  --md-primary-dark: #381E72;
+  --md-secondary: #625B71;
+  --md-secondary-light: #CCC2DC;
+  --md-secondary-dark: #332D41;
+  --md-surface: #FFFBFE;
+  --md-surface-variant: #E7E0EC;
+  --md-background: #F6F6F6;
+  --md-error: #B3261E;
+  --md-error-light: #F9DEDC;
+  --md-on-primary: #FFFFFF;
+  --md-on-secondary: #FFFFFF;
+  --md-on-surface: #1C1B1F;
+  --md-on-surface-variant: #49454F;
+  --md-on-error: #FFFFFF;
+  --md-outline: #79747E;
+  
+  /* シャドウ変数 */
+  --md-shadow-1: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --md-shadow-2: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --md-shadow-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px rgba(0, 0, 0, 0.3);
+  
+  /* アニメーション */
+  --md-transition-standard: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* レイアウト */
+  --md-spacing-unit: 8px;
+  
+  /* タイポグラフィ */
+  font-family: 'Roboto', 'Noto Sans JP', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  /* システム設定 */
+  color-scheme: light;
+  background-color: var(--md-background);
+  color: var(--md-on-surface);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* タイポグラフィスタイル */
+h1 {
+  font-size: 2.25rem;
+  font-weight: 400;
+  line-height: 2.75rem;
+  letter-spacing: 0;
+  margin: 0;
 }
 
+h2 {
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 2.25rem;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+h3 {
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 2rem;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+p {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  letter-spacing: 0.15px;
+  margin: 0;
+}
+
+/* ベーススタイル */
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  padding: 0;
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
+/* ボタンスタイル */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  text-transform: uppercase;
+  border-radius: 20px; /* pill shape */
+  padding: 10px 24px;
+  min-width: 64px;
+  border: none;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: all var(--md-transition-standard);
+  background-color: var(--md-primary);
+  color: var(--md-on-primary);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+button:hover {
+  box-shadow: var(--md-shadow-1);
+  opacity: 0.9;
+}
+
+button:active {
+  box-shadow: var(--md-shadow-2);
+}
+
+button:disabled {
+  background-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.38);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* フォームエレメント */
+input, textarea {
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 16px;
+  border: 1px solid var(--md-outline);
+  border-radius: 4px;
+  background-color: var(--md-surface);
+  color: var(--md-on-surface);
+  transition: border var(--md-transition-standard);
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--md-primary);
+  border-width: 2px;
+}
+
+/* リンクスタイル */
+a {
+  color: var(--md-primary);
+  text-decoration: none;
+  transition: color var(--md-transition-standard);
+}
+
+a:hover {
+  color: var(--md-primary-dark);
+  text-decoration: underline;
 }
