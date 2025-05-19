@@ -6,7 +6,9 @@ interface EntryFormProps {
   maxItems?: number;
   maxLength?: number;
   onSave: (items: string[]) => void;
+  onSaveAndGetComment?: (items: string[]) => void;
   disabled?: boolean;
+  buttonText?: string;
 }
 
 export function EntryForm({
@@ -14,7 +16,9 @@ export function EntryForm({
   maxItems = 3,
   maxLength = 1000,
   onSave,
-  disabled = false
+  onSaveAndGetComment,
+  disabled = false,
+  buttonText = '保存してコメントを取得'
 }: EntryFormProps) {
   const [items, setItems] = useState<string[]>(initialItems);
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +64,13 @@ export function EntryForm({
     // 空の項目をフィルタリング
     const filledItems = items.filter(item => item.trim() !== '');
     
-    // 保存
-    onSave(filledItems);
+    // 保存とコメント取得（優先）
+    if (onSaveAndGetComment) {
+      onSaveAndGetComment(filledItems);
+    } else {
+      // 通常の保存
+      onSave(filledItems);
+    }
   };
 
   return (
@@ -95,7 +104,7 @@ export function EntryForm({
           className="save-button"
           disabled={disabled || items.every(item => !item.trim()) || !!error}
         >
-          保存する
+          {buttonText}
         </button>
       </form>
     </div>

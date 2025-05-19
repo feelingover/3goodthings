@@ -13,6 +13,50 @@
 [ローカルストレージ (IndexedDB)]  [外部API (OpenAI)]
 ```
 
+## デザインシステム
+
+### Material Design 3パターン
+
+アプリケーション全体でMaterial Design 3の原則に基づいた一貫したデザインシステムを採用しています：
+
+```
+[デザイントークン (CSS変数)]
+          ↓
+[基本スタイル (Typography, Color, Spacing)]
+          ↓
+[コアコンポーネント (Buttons, Cards, Forms)]
+          ↓
+[複合コンポーネント (EntryForm, AiComment, EntryList)]
+```
+
+### CSSシステム設計
+
+```css
+/* デザイントークン */
+:root {
+  /* カラーパレット */
+  --md-primary: #6750A4;
+  --md-primary-light: #D0BCFF;
+  
+  /* エレベーション */
+  --md-shadow-1: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  
+  /* アニメーション */
+  --md-transition-standard: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* スペーシング */
+  --md-spacing-unit: 8px;
+}
+```
+
+### 視覚的パターン
+
+- **カード型コンテナ**: 情報の塊をカード型のコンテナでグループ化
+- **エレベーションシステム**: シャドウによる階層の表現
+- **アウトラインフォーム**: 境界線を持つ入力フィールド
+- **ピルボタン**: 角丸の強調されたアクションボタン
+- **視覚的フィードバック**: ホバー、アクティブ状態などのインタラクションフィードバック
+
 ## データモデル
 
 ### 主要エンティティ
@@ -23,6 +67,8 @@
      id?: number;
      content: string;    // 内容（最大1000文字）
      createdAt: Date;    // 作成日時
+     aiComment?: string; // この項目に対するAIコメント
+     hasRequestedComment: boolean; // コメントをリクエスト済みかどうか
    }
    ```
 
@@ -64,19 +110,21 @@ class AppDatabase extends Dexie {
 
 ```
 App
-├── EntryForm
+├── EntryForm (Material Design対応)
 │   └── (入力フォームコンポーネント)
-├── AiComment
+├── AiComment (Material Design対応)
 │   └── (AIコメント表示コンポーネント)
-└── EntryList
+└── EntryList (Material Design対応)
     └── (過去のエントリー表示)
 ```
 
 ## データフローパターン
 
-1. **記録作成フロー**:
+1. **記録作成とコメント自動取得フロー**:
    ```
    User Input → EntryForm → useEntries Hook → Database → UI Update
+                   ↓
+         自動コメントリクエスト
                    ↓
              OpenAI Service → AiComment Component
    ```
@@ -136,6 +184,22 @@ export async function getAiComment(goodThings: string[]): Promise<string> {
 4. **グレースフル機能劣化**:
    - オフライン時にはAIコメント機能を無効化
    - 記録機能は引き続き利用可能
+
+## UIインタラクションパターン
+
+1. **フィードバックアニメーション**:
+   - ボタンクリック時のリップルエフェクト
+   - カード要素のホバーエレベーション変化
+   - フォーム入力時の動的フィードバック
+
+2. **状態遷移アニメーション**:
+   - タブ切り替え時のスムーズな遷移
+   - コンテンツのフェードイン/アウト
+   - エラー表示のスライドイン
+
+3. **ローディングパターン**:
+   - スピナーアニメーション
+   - スケルトンUI（未実装）
 
 ## エラーハンドリングパターン
 

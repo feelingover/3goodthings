@@ -5,6 +5,7 @@ import { EntryList } from './components/EntryList/EntryList';
 import { useEntries } from './hooks/useEntries';
 import { AiCommentItem } from './components/AiComment/AiComment';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
+import { getAiCommentForItem, checkNetworkConnection } from './services/openai';
 import type { DailyEntry } from './types';
 import './App.css';
 
@@ -26,6 +27,38 @@ function App() {
   const handleSaveEntry = async (items: string[]) => {
     await saveEntry(items);
     setActiveView('today'); // 保存後は今日のビューに切り替え
+  };
+  
+  // エントリー保存とコメント自動取得ハンドラ
+  const handleSaveEntryAndGetComment = async (items: string[]) => {
+    // 1. エントリーを保存
+    await saveEntry(items);
+    setActiveView('today'); // 今日のビューに切り替え
+    
+    // 2. 保存完了後、自動的にAIコメントを取得
+    try {
+      if (isOnline) {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // 各項目のコメント取得
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].trim()) {
+            try {
+              // 実際にコメントを取得
+              const comment = await getAiCommentForItem(items[i], checkNetworkConnection);
+              // コメントを保存
+              await saveItemComment(today, i, comment);
+              // リクエスト済みフラグも設定
+              await markItemCommentRequested(today, i);
+            } catch (error) {
+              console.error(`項目${i+1}のコメント取得エラー:`, error);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('AIコメント自動取得エラー:', err);
+    }
   };
 
   // コメント保存ハンドラ
@@ -117,19 +150,20 @@ function App() {
           <EntryForm
             initialItems={getEntryItems()}
             onSave={handleSaveEntry}
+            onSaveAndGetComment={handleSaveEntryAndGetComment}
             disabled={isLoading}
           />
           
           {todayEntry && todayEntry.items.length > 0 && (
-            <div>
-              {/* 各項目のAIコメント */}
-              <div className="item-comments">
-                <h3>項目ごとのコメント</h3>
-                {todayEntry.items.map((item, index) => (
-                  <div key={index} className="item-comment-container">
-                    <div className="item-content-display">
-                      <strong>{index + 1}.</strong> {item.content}
-                    </div>
+            <div className="entry-items-with-comments">
+              {todayEntry.items.map((item, index) => (
+                <div key={index} className="entry-item-with-comment">
+                  <div className="entry-item-display">
+                    <div className="item-number">{index + 1}.</div>
+                    <div className="item-content">{item.content}</div>
+                  </div>
+                  
+                  <div className="item-comment">
                     <AiCommentItem
                       item={item.content}
                       itemIndex={index}
@@ -139,20 +173,8 @@ function App() {
                       onCommentRequested={handleItemCommentRequested}
                     />
                   </div>
-                ))}
-              </div>
-              
-              {/* 従来の全体コメント（後方互換性のために維持） */}
-              <div className="daily-comment">
-                <h3>1日のまとめコメント</h3>
-                <AiComment
-                  items={todayEntry.items.map(item => item.content)}
-                  initialComment={todayEntry.aiComment}
-                  hasRequestedComment={todayEntry.hasRequestedComment}
-                  onCommentSaved={handleSaveComment}
-                  onCommentRequested={handleCommentRequested}
-                />
-              </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -172,45 +194,26 @@ function App() {
             <div className="selected-entry">
               <h2>{formatDate(selectedEntry.date)}の記録</h2>
               
-              <div className="entry-items-display">
+              <div className="entry-items-with-comments">
                 {selectedEntry.items.map((item, index) => (
-                  <div key={index} className="entry-item-display">
-                    <div className="item-number">{index + 1}.</div>
-                    <div className="item-content">{item.content}</div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* 各項目のAIコメント */}
-              <div className="item-comments">
-                <h3>項目ごとのコメント</h3>
-                {selectedEntry.items.map((item, index) => (
-                  <div key={index} className="item-comment-container">
-                    <div className="item-content-display">
-                      <strong>{index + 1}.</strong> {item.content}
+                  <div key={index} className="entry-item-with-comment">
+                    <div className="entry-item-display">
+                      <div className="item-number">{index + 1}.</div>
+                      <div className="item-content">{item.content}</div>
                     </div>
-                    <AiCommentItem
-                      item={item.content}
-                      itemIndex={index}
-                      initialComment={item.aiComment}
-                      hasRequestedComment={item.hasRequestedComment || false}
-                      onCommentSaved={handleSaveItemComment}
-                      onCommentRequested={handleItemCommentRequested}
-                    />
+                    
+                    <div className="item-comment">
+                      <AiCommentItem
+                        item={item.content}
+                        itemIndex={index}
+                        initialComment={item.aiComment}
+                        hasRequestedComment={item.hasRequestedComment || false}
+                        onCommentSaved={handleSaveItemComment}
+                        onCommentRequested={handleItemCommentRequested}
+                      />
+                    </div>
                   </div>
                 ))}
-              </div>
-              
-              {/* 従来の全体コメント（後方互換性のために維持） */}
-              <div className="daily-comment">
-                <h3>1日のまとめコメント</h3>
-                <AiComment
-                  items={selectedEntry.items.map(item => item.content)}
-                  initialComment={selectedEntry.aiComment}
-                  hasRequestedComment={selectedEntry.hasRequestedComment}
-                  onCommentSaved={handleSaveComment}
-                  onCommentRequested={handleCommentRequested}
-                />
               </div>
             </div>
           )}

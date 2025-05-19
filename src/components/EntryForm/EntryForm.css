@@ -1,92 +1,134 @@
 .entry-form {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 24px;
+  background-color: var(--md-surface);
+  border-radius: 16px;
+  box-shadow: var(--md-shadow-1);
 }
 
 .entry-form h2 {
   text-align: center;
-  margin-bottom: 20px;
-  color: #333;
+  margin-bottom: 24px;
+  color: var(--md-primary);
+  font-weight: 500;
 }
 
 .entry-item {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   position: relative;
 }
 
 .entry-item label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #555;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--md-primary);
+  width: 28px;
+  height: 28px;
+  background-color: var(--md-primary-light);
+  border-radius: 50%;
+  font-size: 0.9rem;
 }
 
 .entry-item textarea {
   width: 100%;
-  min-height: 100px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
+  min-height: 120px;
+  padding: 16px;
+  border: 1px solid var(--md-outline);
+  border-radius: 8px;
+  font-size: 1rem;
   resize: vertical;
   font-family: inherit;
+  background-color: var(--md-surface);
+  color: var(--md-on-surface);
+  transition: all var(--md-transition-standard);
 }
 
 .entry-item textarea:focus {
   outline: none;
-  border-color: #4a90e2;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  border-color: var(--md-primary);
+  border-width: 2px;
+  padding: 15px; /* オフセットのために1px減らす */
+  box-shadow: 0 0 0 2px rgba(103, 80, 164, 0.1);
 }
 
 .entry-item textarea:disabled {
-  background-color: #f7f7f7;
+  background-color: var(--md-surface-variant);
   cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .char-count {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
-  font-size: 12px;
-  color: #888;
+  right: 12px;
+  bottom: 12px;
+  font-size: 0.75rem;
+  color: var(--md-on-surface-variant);
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 2px 8px;
+  border-radius: 12px;
 }
 
 .error {
-  color: #e74c3c;
+  color: var(--md-error);
   margin: 10px 0;
-  font-size: 14px;
+  font-size: 0.875rem;
+  padding: 8px 12px;
+  background-color: var(--md-error-light);
+  border-radius: 8px;
 }
 
 .save-button {
-  background-color: #4a90e2;
-  color: white;
+  background-color: var(--md-primary);
+  color: var(--md-on-primary);
   border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 16px;
+  padding: 12px 32px;
+  border-radius: 24px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background-color 0.2s;
-  display: block;
-  margin: 20px auto 0;
+  transition: all var(--md-transition-standard);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 32px auto 8px;
+  box-shadow: var(--md-shadow-1);
 }
 
 .save-button:hover {
-  background-color: #3a80d2;
+  box-shadow: var(--md-shadow-2);
+  opacity: 0.9;
+}
+
+.save-button:active {
+  transform: translateY(1px);
+  box-shadow: var(--md-shadow-1);
 }
 
 .save-button:disabled {
-  background-color: #a0a0a0;
+  background-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.38);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
 @media (max-width: 600px) {
   .entry-form {
-    padding: 10px;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .entry-item {
+    margin-bottom: 16px;
   }
   
   .entry-item textarea {
-    min-height: 80px;
+    min-height: 100px;
   }
   
   .save-button {
