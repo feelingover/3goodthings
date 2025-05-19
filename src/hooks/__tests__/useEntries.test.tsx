@@ -20,11 +20,10 @@ global.Date = jest.fn(() => mockDate) as any;
 
 describe('useEntries フック', () => {
   // コンソールエラーの抑制（エラー処理テスト用）
-  const originalConsoleError = console.error;
   
   beforeEach(() => {
     jest.clearAllMocks();
-    console.error = jest.fn();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     
     // デフォルトのモック実装
     (db.getAllDailyEntries as jest.Mock).mockResolvedValue([]);
