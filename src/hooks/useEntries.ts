@@ -19,8 +19,6 @@ interface UseEntriesReturn {
   error: Error | null;
   saveEntry: (items: string[]) => Promise<DailyEntry>;
   getEntryByDate: (date: string) => Promise<DailyEntry | null>;
-  saveAiComment: (date: string, comment: string) => Promise<void>;
-  markCommentRequested: (date: string) => Promise<void>;
   saveItemComment: (date: string, itemIndex: number, comment: string) => Promise<void>;
   markItemCommentRequested: (date: string, itemIndex: number) => Promise<void>;
 }
@@ -55,8 +53,7 @@ export function useEntries(): UseEntriesReturn {
       } else {
         setTodayEntry({
           date: today,
-          items: [],
-          hasRequestedComment: false
+          items: []
         });
       }
     } catch (err) {
@@ -87,8 +84,7 @@ export function useEntries(): UseEntriesReturn {
       } else {
         entry = {
           date,
-          items: entryItems,
-          hasRequestedComment: false
+          items: entryItems
         };
       }
       
@@ -116,38 +112,6 @@ export function useEntries(): UseEntriesReturn {
     }
   };
 
-  // AIコメントを保存
-  const saveAiComment = async (date: string, comment: string): Promise<void> => {
-    try {
-      const entry = await db.getDailyEntryByDate(date);
-      
-      if (entry) {
-        entry.aiComment = comment;
-        entry.hasRequestedComment = true;
-        await db.saveDailyEntry(entry);
-        
-        // 今日の日付の場合、todayEntryを更新
-        if (date === getTodayDate()) {
-          setTodayEntry({...entry});
-        }
-        
-        // 全エントリーリストも更新
-        await loadAllEntries();
-      } else {
-        // エラーログを出力
-        const errorMessage = `saveAiComment: 指定された日付のエントリーが存在しません。date: ${date}`;
-        console.warn(errorMessage);
-        
-        // エラー状態を設定して上流コンポーネントでハンドリングできるようにする
-        const error = new Error(errorMessage);
-        setError(error);
-        throw error;
-      }
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    }
-  };
   
   // 特定の項目に対するAIコメントを保存
   const saveItemComment = async (date: string, itemIndex: number, comment: string): Promise<void> => {
@@ -172,36 +136,7 @@ export function useEntries(): UseEntriesReturn {
         const errorMessage = !entry 
           ? `saveItemComment: 指定された日付のエントリーが存在しません。date: ${date}`
           : `saveItemComment: 指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`;
-        handleError(errorMessage, setError);
-      }
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    }
-  };
-
-  // コメントをリクエスト済みとしてマーク
-  const markCommentRequested = async (date: string): Promise<void> => {
-    try {
-      const entry = await db.getDailyEntryByDate(date);
-      
-      if (entry) {
-        entry.hasRequestedComment = true;
-        await db.saveDailyEntry(entry);
-        
-        // 今日の日付の場合、todayEntryを更新
-        if (date === getTodayDate()) {
-          setTodayEntry({...entry});
-        }
-        
-        // 全エントリーリストも更新
-        await loadAllEntries();
-      } else {
-        // エラーログを出力
-        const errorMessage = `markCommentRequested: 指定された日付のエントリーが存在しません。date: ${date}`;
         console.warn(errorMessage);
-        
-        // エラー状態を設定して上流コンポーネントでハンドリングできるようにする
         const error = new Error(errorMessage);
         setError(error);
         throw error;
@@ -211,6 +146,7 @@ export function useEntries(): UseEntriesReturn {
       throw err;
     }
   };
+
   
   // 特定の項目のコメントをリクエスト済みとしてマーク
   const markItemCommentRequested = async (date: string, itemIndex: number): Promise<void> => {
@@ -254,8 +190,6 @@ export function useEntries(): UseEntriesReturn {
     error,
     saveEntry,
     getEntryByDate,
-    saveAiComment,
-    markCommentRequested,
     saveItemComment,
     markItemCommentRequested
   };

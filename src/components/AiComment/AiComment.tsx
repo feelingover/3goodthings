@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getAiComment, getAiCommentForItem, checkNetworkConnection } from '../../services/openai';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import './AiComment.css';
@@ -34,13 +34,27 @@ export function AiCommentItem({
   const [error, setError] = useState<string | null>(null);
   const { isOnline } = useNetworkStatus();
   
-  // デバッグ用：コメント表示状態のログ
+  // initialCommentが変更された場合にcommentステートを更新
+  useEffect(() => {
+    console.log("initialComment changed:", initialComment);
+    if (initialComment !== undefined) {
+      setComment(initialComment);
+    }
+  }, [initialComment]);
+  
+  // デバッグ用：コメント表示状態のログ（詳細版）
   console.log(`AiCommentItem[${itemIndex}]:`, {
     item: item ? (item.length > 20 ? item.substring(0, 20) + '...' : item) : 'undefined',
     initialComment: initialComment ? (initialComment.length > 20 ? initialComment.substring(0, 20) + '...' : initialComment) : 'undefined',
     comment: comment ? (comment.length > 20 ? comment.substring(0, 20) + '...' : comment) : 'undefined',
     hasRequestedComment,
-    isOnline
+    isOnline,
+    renderState: {
+      itemEmpty: !item.trim(),
+      commentExists: !!comment,
+      isShowingComment: !!comment,
+      isShowingButton: isOnline && !comment && item.trim()
+    }
   });
 
   // コメント取得ハンドラ
@@ -76,18 +90,20 @@ export function AiCommentItem({
 
   // コンテンツをレンダリング
   const renderContent = () => {
+    // 重要: 先に保存されているコメントの表示をチェック
+    // コメントが保存済みの場合（コメントがあるか、initialCommentが存在する場合）
+    if (comment || initialComment) {
+      const displayComment = comment || initialComment;
+      return (
+        <div className="ai-comment-content">
+          <p className="comment-text">{displayComment}</p>
+        </div>
+      );
+    }
+    
     // 項目が入力されていない場合
     if (!item.trim()) {
       return <p className="ai-comment-info">項目を入力するとAIからのコメントを表示できます</p>;
-    }
-
-    // コメントが保存済みの場合（コメントがあるか、リクエスト済みの場合）
-    if (comment) {
-      return (
-        <div className="ai-comment-content">
-          <p className="comment-text">{comment}</p>
-        </div>
-      );
     }
 
     // オンラインでコメントがまだ取得されていない場合

@@ -12,9 +12,16 @@ import './App.css';
 function App() {
   const [activeView, setActiveView] = useState<'today' | 'history'>('today');
   const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null);
-  const { todayEntry, allEntries, isLoading, saveEntry, saveAiComment, markCommentRequested,
-          saveItemComment, markItemCommentRequested } = useEntries();
+  // UI更新のためのトリガーを追加
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const { todayEntry, allEntries, isLoading, saveEntry,
+          saveItemComment, markItemCommentRequested, getEntryByDate } = useEntries();
   const { isOnline } = useNetworkStatus();
+
+  // todayEntryが変更されたときに再レンダリング
+  useEffect(() => {
+    console.log("todayEntry updated:", todayEntry);
+  }, [todayEntry, refreshTrigger]);
 
   // 選択されたエントリーのリセット
   useEffect(() => {
@@ -31,75 +38,111 @@ function App() {
   
   // エントリー保存とコメント自動取得ハンドラ
   const handleSaveEntryAndGetComment = async (items: string[]) => {
-    // 1. エントリーを保存
-    await saveEntry(items);
-    setActiveView('today'); // 今日のビューに切り替え
-    
-    // 2. 保存完了後、自動的にAIコメントを取得
     try {
+      // 1. エントリーを保存
+      const savedEntry = await saveEntry(items);
+      setActiveView('today'); // 今日のビューに切り替え
+      
+      // 2. 保存完了後、自動的にAIコメントを取得 (オンライン時のみ)
       if (isOnline) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = savedEntry.date;
+        const filledItems = items.filter(item => item.trim() !== '');
         
-        // 各項目のコメント取得
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].trim()) {
-            try {
-              // 実際にコメントを取得
-              const comment = await getAiCommentForItem(items[i], checkNetworkConnection);
-              // コメントを保存
-              await saveItemComment(today, i, comment);
-              // リクエスト済みフラグも設定
-              await markItemCommentRequested(today, i);
-            } catch (error) {
-              console.error(`項目${i+1}のコメント取得エラー:`, error);
-            }
+        // すべての項目のコメント取得操作をPromise配列にまとめる
+        const commentPromises = filledItems.map(async (item, index) => {
+          try {
+            // 実際にコメントを取得
+            const comment = await getAiCommentForItem(item, checkNetworkConnection);
+            // コメントを保存
+            await saveItemComment(today, index, comment);
+            // リクエスト済みフラグも設定
+            await markItemCommentRequested(today, index);
+            return { success: true, index, comment };
+          } catch (error) {
+            console.error(`項目${index+1}のコメント取得エラー:`, error);
+            return { success: false, index, error };
           }
+        });
+        
+        // すべてのコメント取得が完了するのを待つ
+        const results = await Promise.all(commentPromises);
+        
+        // 結果のログ (デバッグ用)
+        const successCount = results.filter(r => r.success).length;
+        console.log(`${filledItems.length}項目中${successCount}項目のコメント取得成功`);
+        
+        // 重要: すべてのコメント取得が完了したら、UIを強制的に更新
+        // refreshTriggerをインクリメントしてUIの再レンダリングを強制
+        setRefreshTrigger(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error('エントリー保存またはAIコメント取得エラー:', err);
+    }
+  };
+
+  
+  // 項目ごとのコメント保存ハンドラ (日付指定対応版)
+  const handleSaveItemComment = async (itemIndex: number, comment: string) => {
+    try {
+      if (activeView === 'today' && todayEntry) {
+        await saveItemComment(todayEntry.date, itemIndex, comment);
+        // 今日のエントリーデータを更新
+        setRefreshTrigger(prev => prev + 1);
+      } else if (selectedEntry) {
+        await saveItemComment(selectedEntry.date, itemIndex, comment);
+        // 選択中のエントリーデータを再読み込み (重要：異なる日付間でのコメント混同を防止)
+        const updatedEntry = await getEntryByDate(selectedEntry.date);
+        if (updatedEntry) {
+          setSelectedEntry(updatedEntry);
         }
       }
     } catch (err) {
-      console.error('AIコメント自動取得エラー:', err);
+      console.error('コメント保存エラー:', err);
     }
   };
 
-  // コメント保存ハンドラ
-  const handleSaveComment = async (comment: string) => {
-    if (activeView === 'today' && todayEntry) {
-      await saveAiComment(todayEntry.date, comment);
-    } else if (selectedEntry) {
-      await saveAiComment(selectedEntry.date, comment);
-    }
-  };
-
-  // コメントリクエスト済みマークハンドラ
-  const handleCommentRequested = async () => {
-    if (activeView === 'today' && todayEntry) {
-      await markCommentRequested(todayEntry.date);
-    } else if (selectedEntry) {
-      await markCommentRequested(selectedEntry.date);
-    }
-  };
-  
-  // 項目ごとのコメント保存ハンドラ
-  const handleSaveItemComment = async (itemIndex: number, comment: string) => {
-    if (activeView === 'today' && todayEntry) {
-      await saveItemComment(todayEntry.date, itemIndex, comment);
-    } else if (selectedEntry) {
-      await saveItemComment(selectedEntry.date, itemIndex, comment);
-    }
-  };
-
-  // 項目ごとのコメントリクエスト済みマークハンドラ
+  // 項目ごとのコメントリクエスト済みマークハンドラ (日付指定対応版)
   const handleItemCommentRequested = async (itemIndex: number) => {
-    if (activeView === 'today' && todayEntry) {
-      await markItemCommentRequested(todayEntry.date, itemIndex);
-    } else if (selectedEntry) {
-      await markItemCommentRequested(selectedEntry.date, itemIndex);
+    try {
+      if (activeView === 'today' && todayEntry) {
+        await markItemCommentRequested(todayEntry.date, itemIndex);
+        setRefreshTrigger(prev => prev + 1);
+      } else if (selectedEntry) {
+        await markItemCommentRequested(selectedEntry.date, itemIndex);
+        // 選択中のエントリーデータを再読み込み
+        const updatedEntry = await getEntryByDate(selectedEntry.date);
+        if (updatedEntry) {
+          setSelectedEntry(updatedEntry);
+        }
+      }
+    } catch (err) {
+      console.error('コメントリクエスト状態更新エラー:', err);
     }
   };
 
-  // エントリー選択ハンドラ
-  const handleSelectEntry = (entry: DailyEntry) => {
-    setSelectedEntry(entry);
+  // エントリー選択ハンドラ - 選択エントリーの詳細をデバッグ表示
+  const handleSelectEntry = async (entry: DailyEntry) => {
+    console.log("EntrySelected - Original Entry:", JSON.stringify(entry));
+    
+    // 選択されたエントリーを最新のデータで再取得（重要）
+    const freshEntry = await getEntryByDate(entry.date);
+    console.log("EntrySelected - Fresh Entry:", JSON.stringify(freshEntry));
+    
+    if (freshEntry) {
+      setSelectedEntry(freshEntry);
+      
+      // 各コメントの詳細をログ出力
+      freshEntry.items.forEach((item, idx) => {
+        console.log(`Item[${idx}] Content: ${item.content}`);
+        console.log(`Item[${idx}] Comment: ${item.aiComment || 'なし'}`);
+        console.log(`Item[${idx}] hasRequestedComment: ${item.hasRequestedComment}`);
+      });
+    } else {
+      setSelectedEntry(entry);
+    }
+    
+    // 履歴表示時にもUIを更新するためのトリガー
+    setRefreshTrigger(prev => prev + 1);
   };
 
   // 現在表示すべきエントリーを決定
@@ -204,6 +247,7 @@ function App() {
                     
                     <div className="item-comment">
                       <AiCommentItem
+                        key={`${selectedEntry.date}-item-${index}`}
                         item={item.content}
                         itemIndex={index}
                         initialComment={item.aiComment}
