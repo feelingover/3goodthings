@@ -12,6 +12,4 @@ export interface DailyEntry {
   id?: number;
   date: string;       // 日付（YYYY-MM-DD形式）
   items: EntryItem[]; // 最大3つの「良いこと」
-  aiComment?: string; // OpenAI APIからのコメント
-  hasRequestedComment: boolean; // コメントをリクエスト済みかどうか
 }
