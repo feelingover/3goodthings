@@ -2,16 +2,17 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { logger } from './utils/logger'
 
 // PWAアプリとして登録
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(registration => {
-        console.log('Service Worker registered with scope:', registration.scope);
+        logger.info('Service Worker registered with scope:', registration.scope);
       })
       .catch(error => {
-        console.error('Service Worker registration failed:', error);
+        logger.error('Service Worker registration failed:', error);
       });
   });
 }

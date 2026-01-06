@@ -1,0 +1,17 @@
+name = "3goodthings-api"
+main = "workers/index.ts"
+compatibility_date = "2025-01-05"
+
+[vars]
+# 環境変数（非機密情報）
+
+# 機密情報はwrangler secret putで設定してください:
+# wrangler secret put OPENAI_API_KEY
+# wrangler secret put OPENAI_MODEL
+
+# CORS設定用
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173"
+
+# 本番環境用の設定（デプロイ時に追加）
+[env.production]
+vars = { ALLOWED_ORIGINS = "https://yourdomain.com" }

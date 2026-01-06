@@ -39,9 +39,38 @@
   font-weight: 400;
   
   /* システム設定 */
-  color-scheme: light;
+  color-scheme: light dark;
   background-color: var(--md-background);
   color: var(--md-on-surface);
+}
+
+/* ダークテーマ */
+:root[data-theme="dark"] {
+  /* Material Design 3 ダークカラーパレット */
+  --md-primary: #D0BCFF;
+  --md-primary-light: #EADDFF;
+  --md-primary-dark: #B69DF8;
+  --md-secondary: #CCC2DC;
+  --md-secondary-light: #E8DEF8;
+  --md-secondary-dark: #B0A7C0;
+  --md-surface: #1C1B1F;
+  --md-surface-variant: #49454F;
+  --md-background: #121212;
+  --md-error: #F2B8B5;
+  --md-error-light: #601410;
+  --md-on-primary: #381E72;
+  --md-on-secondary: #332D41;
+  --md-on-surface: #E6E1E5;
+  --md-on-surface-variant: #CAC4D0;
+  --md-on-error: #601410;
+  --md-outline: #938F99;
+
+  /* ダークモード用シャドウ（明度を調整） */
+  --md-shadow-1: 0px 1px 3px rgba(0, 0, 0, 0.5), 0px 1px 2px rgba(0, 0, 0, 0.3);
+  --md-shadow-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.5), 0px 1px 2px rgba(0, 0, 0, 0.3);
+  --md-shadow-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.5), 0px 1px 3px rgba(0, 0, 0, 0.3);
+
+  color-scheme: dark;
 }
 
 /* タイポグラフィスタイル */

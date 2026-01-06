@@ -20,11 +20,12 @@ global.Date = jest.fn(() => mockDate) as any;
 
 describe('useEntries フック', () => {
   // コンソールエラーの抑制（エラー処理テスト用）
-  
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
     // デフォルトのモック実装
     (db.getAllDailyEntries as jest.Mock).mockResolvedValue([]);
     (db.getDailyEntryByDate as jest.Mock).mockResolvedValue(null);
@@ -36,9 +37,9 @@ describe('useEntries フック', () => {
       }
     });
   });
-  
+
   afterEach(() => {
-    console.error = originalConsoleError;
+    consoleErrorSpy.mockRestore();
   });
 
   test('todayEntryとallEntriesが初期化される', async () => {
@@ -55,8 +56,7 @@ describe('useEntries フック', () => {
     // 初期状態の確認
     expect(result.current.todayEntry).toEqual({
       date: mockDateString,
-      items: [],
-      hasRequestedComment: false
+      items: []
     });
     expect(result.current.allEntries).toEqual([]);
   });
@@ -76,40 +76,10 @@ describe('useEntries フック', () => {
     expect(db.saveDailyEntry).toHaveBeenCalledWith(expect.objectContaining({
       date: mockDateString,
       items: expect.arrayContaining([
-        expect.objectContaining({ 
-          content: '項目1', 
-          hasRequestedComment: false 
+        expect.objectContaining({
+          content: '項目1'
         })
       ])
-    }));
-  });
-
-  test('saveAiComment関数がコメントを保存する', async () => {
-    // 既存のエントリーをモック
-    const mockEntry = {
-      id: 1,
-      date: mockDateString,
-      items: [{ content: '項目1', createdAt: new Date() }],
-      hasRequestedComment: false
-    };
-    
-    (db.getDailyEntryByDate as jest.Mock).mockResolvedValue(mockEntry);
-    
-    const { result } = renderHook(() => useEntries());
-    
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-    
-    await act(async () => {
-      await result.current.saveAiComment(mockDateString, 'テストコメント');
-    });
-    
-    // コメントが保存されたか検証
-    expect(db.saveDailyEntry).toHaveBeenCalledWith(expect.objectContaining({
-      id: 1,
-      aiComment: 'テストコメント',
-      hasRequestedComment: true
     }));
   });
 
@@ -119,24 +89,23 @@ describe('useEntries フック', () => {
       id: 1,
       date: mockDateString,
       items: [
-        { content: '項目1', createdAt: new Date(), hasRequestedComment: false },
-        { content: '項目2', createdAt: new Date(), hasRequestedComment: false }
-      ],
-      hasRequestedComment: false
+        { content: '項目1', createdAt: new Date() },
+        { content: '項目2', createdAt: new Date() }
+      ]
     };
-    
+
     (db.getDailyEntryByDate as jest.Mock).mockResolvedValue(mockEntry);
-    
+
     const { result } = renderHook(() => useEntries());
-    
+
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
-    
+
     await act(async () => {
       await result.current.saveItemComment(mockDateString, 1, '項目へのコメント');
     });
-    
+
     // コメントが項目に保存されたか検証
     expect(db.saveDailyEntry).toHaveBeenCalledWith(expect.objectContaining({
       id: 1,
@@ -144,8 +113,7 @@ describe('useEntries フック', () => {
         expect.objectContaining({ content: '項目1' }),
         expect.objectContaining({
           content: '項目2',
-          aiComment: '項目へのコメント',
-          hasRequestedComment: true
+          aiComment: '項目へのコメント'
         })
       ]
     }));
@@ -157,9 +125,8 @@ describe('useEntries フック', () => {
       id: 1,
       date: mockDateString,
       items: [
-        { content: '項目1', createdAt: new Date(), hasRequestedComment: false }
-      ],
-      hasRequestedComment: false
+        { content: '項目1', createdAt: new Date() }
+      ]
     };
     
     (db.getDailyEntryByDate as jest.Mock).mockResolvedValue(mockEntry);
@@ -173,7 +140,7 @@ describe('useEntries フック', () => {
     await act(async () => {
       await result.current.markItemCommentRequested(mockDateString, 0);
     });
-    
+
     // hasRequestedCommentフラグが設定されたか検証
     expect(db.saveDailyEntry).toHaveBeenCalledWith(expect.objectContaining({
       id: 1,
@@ -211,12 +178,11 @@ describe('useEntries フック', () => {
     // 特定の日付のエントリーを取得
     const nonExistentDate = '2099-12-31';
     const entry = await result.current.getEntryByDate(nonExistentDate);
-    
+
     // 新しい空のエントリーが作成されるか
     expect(entry).toEqual({
       date: nonExistentDate,
-      items: [],
-      hasRequestedComment: false
+      items: []
     });
   });
   

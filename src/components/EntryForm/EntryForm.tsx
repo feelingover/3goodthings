@@ -7,8 +7,10 @@ interface EntryFormProps {
   maxLength?: number;
   onSave: (items: string[]) => void;
   onSaveAndGetComment?: (items: string[]) => void;
+  onCancel?: () => void;
   disabled?: boolean;
   buttonText?: string;
+  isEditMode?: boolean;
 }
 
 export function EntryForm({
@@ -17,8 +19,10 @@ export function EntryForm({
   maxLength = 1000,
   onSave,
   onSaveAndGetComment,
+  onCancel,
   disabled = false,
-  buttonText = '保存してコメントを取得'
+  buttonText = '保存してコメントを取得',
+  isEditMode = false
 }: EntryFormProps) {
   const [items, setItems] = useState<string[]>(initialItems);
   const [error, setError] = useState<string | null>(null);
@@ -75,9 +79,9 @@ export function EntryForm({
 
   return (
     <div className="entry-form">
-      <h2>今日の3つの良いこと</h2>
-      
-      <form onSubmit={handleSubmit}>
+      <h2 id="form-title">{isEditMode ? 'エントリーを編集' : '今日の3つの良いこと'}</h2>
+
+      <form onSubmit={handleSubmit} aria-labelledby="form-title">
         {Array.from({ length: maxItems }).map((_, index) => (
           <div key={index} className="entry-item">
             <label htmlFor={`item-${index}`}>{index + 1}.</label>
@@ -88,24 +92,39 @@ export function EntryForm({
               placeholder="良かったことを入力してください"
               maxLength={maxLength}
               disabled={disabled}
+              aria-label={`${index + 1}番目の良かったこと`}
+              aria-describedby={items[index] ? `char-count-${index}` : undefined}
+              aria-invalid={error ? 'true' : 'false'}
             />
             {items[index] && (
-              <div className="char-count">
+              <div id={`char-count-${index}`} className="char-count" aria-live="polite">
                 {items[index].length} / {maxLength}
               </div>
             )}
           </div>
         ))}
-        
-        {error && <div className="error">{error}</div>}
-        
-        <button 
-          type="submit" 
-          className="save-button"
-          disabled={disabled || items.every(item => !item.trim()) || !!error}
-        >
-          {buttonText}
-        </button>
+
+        {error && <div className="error" role="alert" aria-live="assertive">{error}</div>}
+
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="save-button"
+            disabled={disabled || items.every(item => !item.trim()) || !!error}
+          >
+            {isEditMode ? '更新' : buttonText}
+          </button>
+
+          {isEditMode && onCancel && (
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={onCancel}
+            >
+              キャンセル
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );
