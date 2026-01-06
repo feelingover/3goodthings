@@ -1,11 +1,4 @@
-import OpenAI from 'openai';
 import { config } from '../config';
-
-// OpenAI APIクライアントの作成
-const openai = new OpenAI({
-  apiKey: config.openai.apiKey,
-  dangerouslyAllowBrowser: true, // ブラウザでの実行を許可（本来はサーバーで実行するのが望ましい）
-});
 
 /**
  * 1つの良いことに対してOpenAI APIからコメントを取得
@@ -22,33 +15,25 @@ export async function getAiCommentForItem(
       throw new Error('ネットワーク接続がありません');
     }
 
-    // APIキーが設定されていない場合はエラー
-    if (!config.openai.apiKey || config.openai.apiKey === 'your-api-key-here') {
-      throw new Error('OpenAI APIキーが設定されていません');
-    }
-
-    // 1つの良いことに対してプロンプトを作成
-    const prompt = `
-「良いこと」: ${goodThing}
-
-この「良いこと」に対して、友達のような感覚で一言コメントをください。
-ポジティブで共感的な短いメッセージにしてください（1文程度）。
-`;
-
-    // OpenAI APIを呼び出し
-    const response = await openai.chat.completions.create({
-      model: config.openai.model,
-      messages: [
-        { role: 'system', content: '友達のように気軽にコメントする日本語アシスタントです。' },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: config.openai.maxTokens,
+    // Cloudflare Workersエンドポイントにリクエスト
+    const response = await fetch(`${config.api.endpoint}/api/comment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        goodThing,
+      }),
     });
 
-    // 返答を取得
-    return response.choices[0]?.message?.content || 'コメントを取得できませんでした';
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'APIエラーが発生しました');
+    }
+
+    const data = await response.json();
+    return data.comment || 'コメントを取得できませんでした';
   } catch (error) {
-    console.error('OpenAI API呼び出しエラー:', error);
     throw error;
   }
 }
@@ -65,36 +50,25 @@ export async function getAiComment(goodThings: string[]): Promise<string> {
       throw new Error('ネットワーク接続がありません');
     }
 
-    // APIキーが設定されていない場合はエラー
-    if (!config.openai.apiKey || config.openai.apiKey === 'your-api-key-here') {
-      throw new Error('OpenAI APIキーが設定されていません');
-    }
-
-    // 3つの良いことをまとめてプロンプトを作成
-    const prompt = `
-今日の3つの「良いこと」:
-1. ${goodThings[0] || ''}
-2. ${goodThings[1] || ''}
-3. ${goodThings[2] || ''}
-
-これらの「良いこと」に対して、友達のような感覚で一言コメントをください。
-ポジティブで共感的な短いメッセージにしてください（1文程度）。
-`;
-
-    // OpenAI APIを呼び出し
-    const response = await openai.chat.completions.create({
-      model: config.openai.model,
-      messages: [
-        { role: 'system', content: '友達のように気軽にコメントする日本語アシスタントです。' },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: config.openai.maxTokens,
+    // Cloudflare Workersエンドポイントにリクエスト
+    const response = await fetch(`${config.api.endpoint}/api/comment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        goodThings,
+      }),
     });
 
-    // 返答を取得
-    return response.choices[0]?.message?.content || 'コメントを取得できませんでした';
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'APIエラーが発生しました');
+    }
+
+    const data = await response.json();
+    return data.comment || 'コメントを取得できませんでした';
   } catch (error) {
-    console.error('OpenAI API呼び出しエラー:', error);
     throw error;
   }
 }

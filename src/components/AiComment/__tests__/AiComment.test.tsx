@@ -138,7 +138,7 @@ describe('AiComment コンポーネント（全体コメント）', () => {
     });
   });
 
-  test('項目が足りない場合はエラーが表示される', async () => {
+  test('項目が足りない場合は情報メッセージが表示される', () => {
     render(
       <AiComment
         items={['良いこと1', '良いこと2']} // 3つ目がない
@@ -147,14 +147,10 @@ describe('AiComment コンポーネント（全体コメント）', () => {
         onCommentRequested={mockRequested}
       />
     );
-    
-    const button = screen.getByRole('button', { name: /AIコメントを取得/i });
-    fireEvent.click(button);
-    
-    await waitFor(() => {
-      expect(screen.getByText(/3つすべての項目を入力してください/i)).toBeInTheDocument();
-      expect(getAiComment).not.toHaveBeenCalled();
-    });
+
+    // ボタンは表示されず、情報メッセージが表示される
+    expect(screen.queryByRole('button', { name: /AIコメントを取得/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/3つの項目をすべて入力すると、AIからのコメントが表示されます/i)).toBeInTheDocument();
   });
 
   test('ネットワーク状態の変化に対応する', async () => {
@@ -305,7 +301,8 @@ describe('AiCommentItem コンポーネント（項目ごとのコメント）',
   
   test('ネットワークチェックがfalseを返す場合にエラーが表示される', async () => {
     (checkNetworkConnection as jest.Mock).mockReturnValue(false);
-    
+    mockUseNetworkStatus.mockReturnValue({ isOnline: false });
+
     render(
       <AiCommentItem
         item="良いこと1"
@@ -315,45 +312,13 @@ describe('AiCommentItem コンポーネント（項目ごとのコメント）',
         onCommentRequested={mockRequested}
       />
     );
-    
-    const button = screen.getByRole('button', { name: /AIコメントを取得/i });
-    fireEvent.click(button);
-    
-    await waitFor(() => {
-      expect(screen.getByText(/オフラインのため、コメントを取得できません/i)).toBeInTheDocument();
-      expect(getAiCommentForItem).not.toHaveBeenCalled();
-    });
+
+    // オフライン時はボタンが表示されない
+    expect(screen.queryByRole('button', { name: /AIコメントを取得/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/オフライン中のためコメントを取得できません/i)).toBeInTheDocument();
+    expect(getAiCommentForItem).not.toHaveBeenCalled();
   });
 
-  test('コンソールログ出力の検証（デバッグ用）', () => {
-    const consoleSpy = jest.spyOn(console, 'log');
-    
-    render(
-      <AiCommentItem
-        item="これはとても長いテキストです。これは20文字を超えています。"
-        itemIndex={1}
-        initialComment="これもとても長いコメントです。これも20文字を超えています。"
-        hasRequestedComment={true}
-        onCommentSaved={mockSaved}
-        onCommentRequested={mockRequested}
-      />
-    );
-    
-    // コンソールログが期待通りに呼び出されたか
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'AiCommentItem[1]:',
-      expect.objectContaining({
-        item: 'これはとても長いテキ...',
-        initialComment: 'これもとても長いコ...',
-        comment: 'これもとても長いコ...',
-        hasRequestedComment: true,
-        isOnline: true
-      })
-    );
-    
-    consoleSpy.mockRestore();
-  });
-  
   test('空の項目の場合はメッセージが表示される', () => {
     render(
       <AiCommentItem

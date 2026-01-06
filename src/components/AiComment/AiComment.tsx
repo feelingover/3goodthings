@@ -36,26 +36,10 @@ export function AiCommentItem({
   
   // initialCommentが変更された場合にcommentステートを更新
   useEffect(() => {
-    console.log("initialComment changed:", initialComment);
     if (initialComment !== undefined) {
       setComment(initialComment);
     }
   }, [initialComment]);
-  
-  // デバッグ用：コメント表示状態のログ（詳細版）
-  console.log(`AiCommentItem[${itemIndex}]:`, {
-    item: item ? (item.length > 20 ? item.substring(0, 20) + '...' : item) : 'undefined',
-    initialComment: initialComment ? (initialComment.length > 20 ? initialComment.substring(0, 20) + '...' : initialComment) : 'undefined',
-    comment: comment ? (comment.length > 20 ? comment.substring(0, 20) + '...' : comment) : 'undefined',
-    hasRequestedComment,
-    isOnline,
-    renderState: {
-      itemEmpty: !item.trim(),
-      commentExists: !!comment,
-      isShowingComment: !!comment,
-      isShowingButton: isOnline && !comment && item.trim()
-    }
-  });
 
   // コメント取得ハンドラ
   const handleGetComment = async () => {
@@ -110,12 +94,15 @@ export function AiCommentItem({
     if (isOnline) {
       return (
         <div className="ai-comment-actions">
-          <button 
-            className="get-comment-button" 
-            onClick={handleGetComment} 
+          <button
+            className="get-comment-button"
+            onClick={handleGetComment}
             disabled={isLoading}
+            aria-busy={isLoading}
           >
-            {isLoading ? 'コメント取得中...' : 'AIコメントを取得'}
+            <span aria-live="polite" aria-atomic="true">
+              {isLoading ? 'コメント取得中...' : 'AIコメントを取得'}
+            </span>
           </button>
         </div>
       );
@@ -135,7 +122,7 @@ export function AiCommentItem({
 
   return (
     <div className="ai-comment-item">
-      {error && <div className="ai-comment-error">{error}</div>}
+      {error && <div className="ai-comment-error" role="alert" aria-live="assertive">{error}</div>}
       {renderContent()}
     </div>
   );
@@ -206,12 +193,15 @@ export function AiComment({
     if (isOnline && !hasRequestedComment) {
       return (
         <div className="ai-comment-actions">
-          <button 
-            className="get-comment-button" 
-            onClick={handleGetComment} 
+          <button
+            className="get-comment-button"
+            onClick={handleGetComment}
             disabled={isLoading}
+            aria-busy={isLoading}
           >
-            {isLoading ? 'コメント取得中...' : 'AIコメントを取得'}
+            <span aria-live="polite" aria-atomic="true">
+              {isLoading ? 'コメント取得中...' : 'AIコメントを取得'}
+            </span>
           </button>
         </div>
       );

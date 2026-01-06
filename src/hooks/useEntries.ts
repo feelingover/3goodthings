@@ -21,6 +21,8 @@ interface UseEntriesReturn {
   getEntryByDate: (date: string) => Promise<DailyEntry | null>;
   saveItemComment: (date: string, itemIndex: number, comment: string) => Promise<void>;
   markItemCommentRequested: (date: string, itemIndex: number) => Promise<void>;
+  deleteEntry: (date: string) => Promise<void>;
+  updateEntry: (date: string, items: string[]) => Promise<void>;
 }
 
 export function useEntries(): UseEntriesReturn {
@@ -183,6 +185,51 @@ export function useEntries(): UseEntriesReturn {
     }
   };
 
+  // エントリーを削除
+  const deleteEntry = async (date: string): Promise<void> => {
+    try {
+      await db.deleteDailyEntry(date);
+
+      // todayEntryが削除された場合は空にする
+      if (date === getTodayDate()) {
+        setTodayEntry({
+          date: date,
+          items: []
+        });
+      }
+
+      // 全エントリーリストを再読み込み
+      await loadAllEntries();
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    }
+  };
+
+  // エントリーを更新
+  const updateEntry = async (date: string, items: string[]): Promise<void> => {
+    try {
+      const entryItems: EntryItem[] = items.map((content) => ({
+        content,
+        createdAt: new Date(),
+        hasRequestedComment: false
+      }));
+
+      await db.updateDailyEntry(date, entryItems);
+
+      // todayEntryが更新された場合は再読み込み
+      if (date === getTodayDate()) {
+        await loadTodayEntry();
+      }
+
+      // 全エントリーリストを再読み込み
+      await loadAllEntries();
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    }
+  };
+
   return {
     todayEntry,
     allEntries,
@@ -191,6 +238,8 @@ export function useEntries(): UseEntriesReturn {
     saveEntry,
     getEntryByDate,
     saveItemComment,
-    markItemCommentRequested
+    markItemCommentRequested,
+    deleteEntry,
+    updateEntry
   };
 }

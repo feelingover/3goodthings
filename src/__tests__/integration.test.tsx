@@ -22,6 +22,9 @@ jest.mock('../services/openai', () => ({
   checkNetworkConnection: jest.fn().mockReturnValue(true)
 }));
 
+// グローバルfetchのモック
+global.fetch = jest.fn();
+
 jest.mock('../hooks/useNetworkStatus', () => ({
   useNetworkStatus: jest.fn().mockReturnValue({ isOnline: true })
 }));
@@ -35,7 +38,7 @@ global.Date = jest.fn(() => mockDate) as any;
 describe('インテグレーションテスト', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // デフォルトのモック実装
     (db.getAllDailyEntries as jest.Mock).mockResolvedValue([]);
     (db.getDailyEntryByDate as jest.Mock).mockResolvedValue(null);
@@ -46,6 +49,13 @@ describe('インテグレーションテスト', () => {
         return Promise.resolve(1);
       }
     });
+
+    // fetchのモック実装（Cloudflare Workers APIレスポンス）
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ comment: '項目へのテストコメントです' })
+    });
+
     (openaiService.getAiComment as jest.Mock).mockResolvedValue('テストコメントです');
     (openaiService.getAiCommentForItem as jest.Mock).mockResolvedValue('項目へのテストコメントです');
     (networkHook.useNetworkStatus as jest.Mock).mockReturnValue({ isOnline: true });
@@ -205,9 +215,12 @@ describe('インテグレーションテスト', () => {
   });
   
   test('AIコメント取得失敗時のエラーハンドリング', async () => {
-    // AIコメント取得が失敗するようにモック
-    (openaiService.getAiComment as jest.Mock).mockRejectedValue(new Error('APIエラー'));
-    
+    // fetchが失敗するようにモック（Cloudflare Workers APIエラー）
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: 'APIエラー' })
+    });
+
     render(<App />);
     
     // エントリーフォームに入力

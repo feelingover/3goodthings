@@ -1,0 +1,163 @@
+.export-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.export-dialog {
+  background-color: var(--md-surface);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--md-shadow-3);
+  animation: slideUp 0.2s ease-out;
+}
+
+.export-dialog-content {
+  margin: 24px 0;
+}
+
+.format-section,
+.date-range-section {
+  margin-bottom: 24px;
+}
+
+.section-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--md-on-surface);
+  margin-bottom: 12px;
+}
+
+/* フォーマット選択 */
+.format-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.format-button {
+  flex: 1;
+  padding: 12px 24px;
+  border: 2px solid var(--md-outline);
+  background-color: transparent;
+  color: var(--md-on-surface);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--md-transition-standard);
+}
+
+.format-button:hover {
+  background-color: rgba(103, 80, 164, 0.08);
+  border-color: var(--md-primary);
+}
+
+.format-button.active {
+  background-color: var(--md-primary-light);
+  border-color: var(--md-primary);
+  color: var(--md-primary-dark);
+}
+
+.format-description {
+  font-size: 0.75rem;
+  color: var(--md-on-surface-variant);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* 日付範囲 */
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.date-input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-input-group label {
+  font-size: 0.75rem;
+  color: var(--md-on-surface-variant);
+}
+
+.date-input-group input[type="date"] {
+  padding: 10px 12px;
+  border: 1px solid var(--md-outline);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background-color: var(--md-surface);
+  color: var(--md-on-surface);
+  transition: border var(--md-transition-standard);
+}
+
+.date-input-group input[type="date"]:focus {
+  outline: none;
+  border-color: var(--md-primary);
+  border-width: 2px;
+  padding: 9px 11px;
+}
+
+.date-separator {
+  color: var(--md-on-surface-variant);
+  font-size: 0.875rem;
+  margin-top: 16px;
+}
+
+/* エクスポート概要 */
+.export-summary {
+  padding: 16px;
+  background-color: var(--md-surface-variant);
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.summary-text {
+  font-size: 0.875rem;
+  color: var(--md-on-surface);
+  margin: 0;
+}
+
+.summary-text strong {
+  color: var(--md-primary);
+  font-weight: 600;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 600px) {
+  .export-dialog {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .date-range {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .date-separator {
+    margin: 0;
+    transform: rotate(90deg);
+  }
+
+  .format-selector {
+    flex-direction: column;
+  }
+}

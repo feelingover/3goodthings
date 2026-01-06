@@ -1,16 +1,14 @@
 // アプリ全体の設定
 
 export const config = {
-  // OpenAI API設定
-  openai: {
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY as string,
-    model: import.meta.env.VITE_OPENAI_MODEL as string || "gpt-4o", // 未設定の場合はデフォルト値
-    maxTokens: 50, // 短いコメント用
+  // API設定
+  api: {
+    endpoint: import.meta.env.VITE_API_ENDPOINT as string || "http://localhost:8787", // Cloudflare Workers endpoint
   },
-  
+
   // データベース設定
   db: {
     name: "3GoodThingsDB",
-    version: 1,
+    version: 2,
   },
 };

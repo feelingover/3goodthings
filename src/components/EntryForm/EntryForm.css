@@ -117,21 +117,55 @@
   cursor: not-allowed;
 }
 
+/* Form actions */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.cancel-button {
+  background-color: transparent;
+  color: var(--md-primary);
+  border: 1px solid var(--md-outline);
+  padding: 12px 32px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--md-transition-standard);
+}
+
+.cancel-button:hover {
+  background-color: rgba(103, 80, 164, 0.08);
+  border-color: var(--md-primary);
+}
+
 @media (max-width: 600px) {
   .entry-form {
     padding: 16px;
     border-radius: 12px;
   }
-  
+
   .entry-item {
     margin-bottom: 16px;
   }
-  
+
   .entry-item textarea {
     min-height: 100px;
   }
-  
+
+  .form-actions {
+    flex-direction: column;
+  }
+
   .save-button {
+    width: 100%;
+  }
+
+  .cancel-button {
     width: 100%;
   }
 }

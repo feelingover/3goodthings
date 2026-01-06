@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { EntryForm } from './components/EntryForm/EntryForm';
-import { AiComment } from './components/AiComment/AiComment';
 import { EntryList } from './components/EntryList/EntryList';
+import { ThemeToggle } from './components/ThemeToggle/ThemeToggle';
+import { ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
+import { ExportDialog } from './components/ExportDialog/ExportDialog';
 import { useEntries } from './hooks/useEntries';
 import { AiCommentItem } from './components/AiComment/AiComment';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
-import { getAiCommentForItem, checkNetworkConnection } from './services/openai';
+import { getAiCommentForItem } from './services/openai';
 import type { DailyEntry } from './types';
 import './App.css';
 
@@ -14,13 +16,19 @@ function App() {
   const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null);
   // UI更新のためのトリガーを追加
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  // 編集・削除のための状態
+  const [editingEntry, setEditingEntry] = useState<DailyEntry | null>(null);
+  const [deleteConfirmEntry, setDeleteConfirmEntry] = useState<DailyEntry | null>(null);
+  // エクスポートダイアログの状態
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const { todayEntry, allEntries, isLoading, saveEntry,
-          saveItemComment, markItemCommentRequested, getEntryByDate } = useEntries();
+          saveItemComment, markItemCommentRequested, getEntryByDate,
+          deleteEntry, updateEntry } = useEntries();
   const { isOnline } = useNetworkStatus();
 
   // todayEntryが変更されたときに再レンダリング
   useEffect(() => {
-    console.log("todayEntry updated:", todayEntry);
+    // UI更新トリガー
   }, [todayEntry, refreshTrigger]);
 
   // 選択されたエントリーのリセット
@@ -52,31 +60,26 @@ function App() {
         const commentPromises = filledItems.map(async (item, index) => {
           try {
             // 実際にコメントを取得
-            const comment = await getAiCommentForItem(item, checkNetworkConnection);
+            const comment = await getAiCommentForItem(item, () => isOnline);
             // コメントを保存
             await saveItemComment(today, index, comment);
             // リクエスト済みフラグも設定
             await markItemCommentRequested(today, index);
             return { success: true, index, comment };
           } catch (error) {
-            console.error(`項目${index+1}のコメント取得エラー:`, error);
             return { success: false, index, error };
           }
         });
         
         // すべてのコメント取得が完了するのを待つ
-        const results = await Promise.all(commentPromises);
-        
-        // 結果のログ (デバッグ用)
-        const successCount = results.filter(r => r.success).length;
-        console.log(`${filledItems.length}項目中${successCount}項目のコメント取得成功`);
-        
+        await Promise.all(commentPromises);
+
         // 重要: すべてのコメント取得が完了したら、UIを強制的に更新
         // refreshTriggerをインクリメントしてUIの再レンダリングを強制
         setRefreshTrigger(prev => prev + 1);
       }
     } catch (err) {
-      console.error('エントリー保存またはAIコメント取得エラー:', err);
+      // エラーは握りつぶさずに通知する可能性あり
     }
   };
 
@@ -97,7 +100,7 @@ function App() {
         }
       }
     } catch (err) {
-      console.error('コメント保存エラー:', err);
+      // エラーハンドリング
     }
   };
 
@@ -116,42 +119,67 @@ function App() {
         }
       }
     } catch (err) {
-      console.error('コメントリクエスト状態更新エラー:', err);
+      // エラーハンドリング
     }
   };
 
-  // エントリー選択ハンドラ - 選択エントリーの詳細をデバッグ表示
+  // エントリー選択ハンドラ
   const handleSelectEntry = async (entry: DailyEntry) => {
-    console.log("EntrySelected - Original Entry:", JSON.stringify(entry));
-    
     // 選択されたエントリーを最新のデータで再取得（重要）
     const freshEntry = await getEntryByDate(entry.date);
-    console.log("EntrySelected - Fresh Entry:", JSON.stringify(freshEntry));
-    
+
     if (freshEntry) {
       setSelectedEntry(freshEntry);
-      
-      // 各コメントの詳細をログ出力
-      freshEntry.items.forEach((item, idx) => {
-        console.log(`Item[${idx}] Content: ${item.content}`);
-        console.log(`Item[${idx}] Comment: ${item.aiComment || 'なし'}`);
-        console.log(`Item[${idx}] hasRequestedComment: ${item.hasRequestedComment}`);
-      });
     } else {
       setSelectedEntry(entry);
     }
-    
+
     // 履歴表示時にもUIを更新するためのトリガー
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // 現在表示すべきエントリーを決定
-  const currentEntry = activeView === 'today' ? todayEntry : selectedEntry;
-  
+  // 編集ハンドラ
+  const handleEditEntry = (entry: DailyEntry) => {
+    setEditingEntry(entry);
+    setActiveView('today');
+  };
+
+  // 更新ハンドラ
+  const handleUpdateEntry = async (items: string[]) => {
+    if (!editingEntry) return;
+    await updateEntry(editingEntry.date, items);
+    setEditingEntry(null);
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  // 編集キャンセルハンドラ
+  const handleCancelEdit = () => {
+    setEditingEntry(null);
+  };
+
+  // 削除ハンドラ
+  const handleDeleteEntry = (entry: DailyEntry) => {
+    setDeleteConfirmEntry(entry);
+  };
+
+  // 削除確定ハンドラ
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmEntry) return;
+    await deleteEntry(deleteConfirmEntry.date);
+    setDeleteConfirmEntry(null);
+    if (selectedEntry?.date === deleteConfirmEntry.date) {
+      setSelectedEntry(null);
+    }
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  // 現在表示すべきエントリーを決定（編集モードも考慮）
+  const currentEntry = editingEntry || (activeView === 'today' ? todayEntry : selectedEntry);
+
   // エントリーの項目内容を取得
   const getEntryItems = (): string[] => {
     if (!currentEntry) return ['', '', ''];
-    
+
     // 既存の項目を取得し、3つに満たない場合は空文字で埋める
     const items = currentEntry.items.map(item => item.content);
     while (items.length < 3) {
@@ -162,42 +190,72 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-header">
+      <a href="#main-content" className="skip-to-content">
+        メインコンテンツへスキップ
+      </a>
+      <header className="app-header" role="banner">
         <h1>3 Good Things</h1>
-        <div className="network-status">
-          {isOnline ? (
-            <span className="status-online">オンライン</span>
-          ) : (
-            <span className="status-offline">オフライン</span>
-          )}
+        <div className="header-actions" role="navigation" aria-label="ヘッダーアクション">
+          <button
+            className="export-button"
+            onClick={() => setIsExportDialogOpen(true)}
+            aria-label="データをエクスポート"
+            title="データをエクスポート"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </button>
+          <ThemeToggle />
+          <div className="network-status">
+            {isOnline ? (
+              <span className="status-online">オンライン</span>
+            ) : (
+              <span className="status-offline">オフライン</span>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="view-selector">
+      <nav className="view-selector" role="tablist" aria-label="ビュー切り替え">
         <button
+          id="today-tab"
           className={`view-button ${activeView === 'today' ? 'active' : ''}`}
           onClick={() => setActiveView('today')}
+          role="tab"
+          aria-selected={activeView === 'today'}
+          aria-controls="today-panel"
         >
           今日の記録
         </button>
         <button
+          id="history-tab"
           className={`view-button ${activeView === 'history' ? 'active' : ''}`}
           onClick={() => setActiveView('history')}
+          role="tab"
+          aria-selected={activeView === 'history'}
+          aria-controls="history-panel"
         >
           履歴
         </button>
-      </div>
+      </nav>
 
       {activeView === 'today' && (
-        <div className="today-view">
+        <main id="main-content" className="today-view" role="main">
+          <div id="today-panel" role="tabpanel" aria-labelledby="today-tab">
           <EntryForm
             initialItems={getEntryItems()}
-            onSave={handleSaveEntry}
-            onSaveAndGetComment={handleSaveEntryAndGetComment}
+            onSave={editingEntry ? handleUpdateEntry : handleSaveEntry}
+            onSaveAndGetComment={editingEntry ? undefined : handleSaveEntryAndGetComment}
+            onCancel={editingEntry ? handleCancelEdit : undefined}
+            isEditMode={!!editingEntry}
             disabled={isLoading}
           />
-          
-          {todayEntry && todayEntry.items.length > 0 && (
+
+
+          {!editingEntry && todayEntry && todayEntry.items.length > 0 && (
             <div className="entry-items-with-comments">
               {todayEntry.items.map((item, index) => (
                 <div key={index} className="entry-item-with-comment">
@@ -220,15 +278,19 @@ function App() {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        </main>
       )}
 
       {activeView === 'history' && (
-        <div className="history-view">
+        <main id="main-content" className="history-view" role="main">
+          <div id="history-panel" role="tabpanel" aria-labelledby="history-tab">
           <div className="entries-container">
             <EntryList
               entries={allEntries}
               onSelectEntry={handleSelectEntry}
+              onEditEntry={handleEditEntry}
+              onDeleteEntry={handleDeleteEntry}
               isLoading={isLoading}
             />
           </div>
@@ -261,8 +323,29 @@ function App() {
               </div>
             </div>
           )}
-        </div>
+          </div>
+        </main>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deleteConfirmEntry}
+        title="エントリーを削除"
+        message={deleteConfirmEntry
+          ? `${formatDate(deleteConfirmEntry.date)}のエントリーを削除しますか？この操作は取り消せません。`
+          : ''
+        }
+        confirmText="削除"
+        cancelText="キャンセル"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteConfirmEntry(null)}
+        variant="danger"
+      />
+
+      <ExportDialog
+        isOpen={isExportDialogOpen}
+        entries={allEntries}
+        onClose={() => setIsExportDialogOpen(false)}
+      />
     </div>
   );
 }

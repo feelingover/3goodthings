@@ -13,6 +13,24 @@
   flex-direction: column;
 }
 
+/* Skip to content リンク */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background-color: var(--md-primary);
+  color: var(--md-on-primary);
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  z-index: 100;
+  font-weight: 500;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
 /* ヘッダーセクション */
 .app-header {
   background-color: var(--md-primary);
@@ -31,6 +49,36 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: 500;
+}
+
+/* ヘッダーアクション */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.export-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background-color: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--md-transition-standard);
+  color: var(--md-on-primary);
+  padding: 0;
+}
+
+.export-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.export-button:active {
+  transform: scale(0.95);
 }
 
 /* ネットワークステータス */
@@ -327,4 +375,15 @@
   border-radius: 8px;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 600px) {
+  .app-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .header-actions {
+    gap: 0.5rem;
+  }
 }

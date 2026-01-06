@@ -23,10 +23,11 @@
   padding: 16px;
   border-radius: 12px;
   box-shadow: var(--md-shadow-1);
-  cursor: pointer;
   transition: all var(--md-transition-standard);
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   position: relative;
   overflow: hidden;
 }
@@ -53,6 +54,13 @@
 
 .entry-item.selected::before {
   background-color: var(--md-primary);
+}
+
+.entry-content {
+  flex: 1;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
 }
 
 .entry-date {
@@ -100,6 +108,51 @@
   background-repeat: no-repeat;
 }
 
+.entry-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background-color: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--md-transition-standard);
+  padding: 0;
+}
+
+.icon-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.icon-button:active {
+  transform: scale(0.95);
+}
+
+.edit-button {
+  color: var(--md-primary);
+}
+
+.edit-button:hover {
+  background-color: rgba(103, 80, 164, 0.08);
+}
+
+.delete-button {
+  color: var(--md-error);
+}
+
+.delete-button:hover {
+  background-color: rgba(179, 38, 30, 0.08);
+}
+
 .entry-list-loading,
 .entry-list-empty {
   text-align: center;
@@ -133,8 +186,18 @@
   .entry-list {
     padding: 12px;
   }
-  
+
   .entry-item {
     padding: 12px;
+  }
+
+  .icon-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .icon-button svg {
+    width: 18px;
+    height: 18px;
   }
 }

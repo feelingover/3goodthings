@@ -16,6 +16,7 @@
 - ⚛️ React
 - 💾 IndexedDB (Dexie.js)
 - 🤖 OpenAI API
+- ☁️ Cloudflare Workers (APIプロキシ)
 - 📲 PWA (Service Worker + Workbox)
 - 🧪 Jest + React Testing Library
 
@@ -29,30 +30,78 @@ npm install
 
 ### 環境変数の設定
 
-`.env`ファイルを作成し、以下の内容を設定してください：
+#### 1. Cloudflare Workersの設定
+
+Cloudflare Workersを使ってOpenAI APIを安全に呼び出します。
+
+```bash
+# Cloudflare Wranglerでシークレットを設定
+wrangler secret put OPENAI_API_KEY
+# プロンプトが表示されたらあなたのOpenAI API キーを入力
+
+# (オプション) モデルを指定する場合
+wrangler secret put OPENAI_MODEL
+# デフォルトはgpt-4o
+```
+
+#### 2. フロントエンドの設定
+
+`.env`ファイルを作成し、Cloudflare WorkersのエンドポイントURLを設定してください：
 
 ```
-VITE_OPENAI_API_KEY="your-api-key-here"
-VITE_OPENAI_MODEL="gpt-4o"
+# 開発環境
+VITE_API_ENDPOINT="http://localhost:8787"
+
+# 本番環境（デプロイ後に更新）
+# VITE_API_ENDPOINT="https://your-worker-name.your-subdomain.workers.dev"
 ```
 
 ### 開発サーバーの起動
+
+#### 1. Cloudflare Workersの起動（ターミナル1）
+
+```bash
+npm run workers:dev
+```
+
+#### 2. フロントエンドの起動（ターミナル2）
 
 ```bash
 npm run dev
 ```
 
-### ビルド
+### ビルド・デプロイ
+
+#### フロントエンドのビルド
 
 ```bash
 npm run build
 ```
+
+#### Cloudflare Workersのデプロイ
+
+```bash
+npm run workers:deploy
+```
+
+デプロイ後、`.env`ファイルの`VITE_API_ENDPOINT`をデプロイされたWorkers URLに更新してください。
 
 ### テスト実行
 
 ```bash
 npm test
 ```
+
+## セキュリティ 🔒
+
+このアプリケーションは、**Cloudflare Workers**を使用してOpenAI APIキーをブラウザから隠蔽しています。フロントエンドはAPIキーに直接アクセスせず、Workersを経由してOpenAI APIを呼び出します。
+
+### セキュリティのベストプラクティス
+
+- ✅ API キーはCloudflare Workersの環境変数として安全に保存
+- ✅ フロントエンドからはAPIキーに直接アクセス不可
+- ✅ CORS設定により、許可されたオリジンからのみアクセス可能
+- ✅ サーバーサイドでレート制限やログ管理が可能
 
 ## プロジェクト構成 🗂️
 
