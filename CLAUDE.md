@@ -74,75 +74,189 @@
 
 ---
 
-## 📋 Sprint 2: UX改善の基盤（次のステップ）
+## 🎉 Sprint 2: UX改善の基盤（完了）
 
-### 2.1 ダークモード実装 🌙
+### 実装期間
+2026-01-05 〜 2026-01-06（2日間）
+
+### 完了した作業
+
+#### 2.1 ダークモード実装 🌙 ✅
 
 **実装内容**:
-1. CSS変数でダークテーマ定義
-2. localStorage/IndexedDBで設定保存
-3. prefers-color-scheme対応
-4. ヘッダーにトグルボタン追加
+- Material Design 3カラーシステムに基づくダークテーマ
+- システムテーマ（prefers-color-scheme）の自動検出
+- IndexedDB設定テーブルでテーマ設定を永続化
+- 3つのテーマオプション: Light / Dark / System
+- テーマ変更時のフラッシュ防止（isLoading制御）
 
 **新規ファイル**:
-- `/src/hooks/useTheme.ts` - テーマ状態管理カスタムフック
-- `/src/components/ThemeToggle/ThemeToggle.tsx` - トグルボタンコンポーネント
-- `/src/components/ThemeToggle/ThemeToggle.css`
+- [src/hooks/useTheme.ts](src/hooks/useTheme.ts) - テーマ状態管理カスタムフック
+- [src/components/ThemeToggle/ThemeToggle.tsx](src/components/ThemeToggle/ThemeToggle.tsx) - 3つのテーマボタンUI
+- [src/components/ThemeToggle/ThemeToggle.css](src/components/ThemeToggle/ThemeToggle.css) - トグルボタンスタイル
 
 **変更ファイル**:
-- [src/index.css](src/index.css) - ダークテーマCSS変数追加
-- [src/App.tsx](src/App.tsx) - ThemeToggle配置
-- [src/App.css](src/App.css) - テーマ対応スタイル
+- [src/db/database.ts](src/db/database.ts) - settingsテーブル追加（version 2へマイグレーション）
+- [src/config.ts](src/config.ts) - DBバージョン 1→2 に更新
+- [src/index.css](src/index.css) - Material Design 3 ダークテーマCSS変数追加
+- [src/App.tsx](src/App.tsx) - ThemeToggleをヘッダーに配置
+- [src/App.css](src/App.css) - header-actionsレイアウト追加
 
-**期待効果**: 継続率+15%見込み
+**技術的ハイライト**:
+```typescript
+// システムテーマの監視
+const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+mediaQuery.addEventListener('change', handleChange);
 
-### 2.2 エントリー編集・削除機能 ✏️🗑️
+// data-theme属性でテーマ切り替え
+document.documentElement.setAttribute('data-theme', effectiveTheme);
+```
+
+#### 2.2 エントリー編集・削除機能 ✏️🗑️ ✅
 
 **実装内容**:
-1. エントリー編集モード（既存フォームを再利用）
-2. 削除確認ダイアログ
-3. 削除機能（物理削除）
+- 既存EntryFormコンポーネントを再利用した編集モード
+- 物理削除（完全削除）機能
+- 削除確認ダイアログ（dangerバリアント対応）
+- ESCキーで確認ダイアログをキャンセル可能
 
 **新規ファイル**:
-- `/src/components/ConfirmDialog/ConfirmDialog.tsx`
-- `/src/components/ConfirmDialog/ConfirmDialog.css`
-- `/src/hooks/useConfirmDialog.ts`
+- [src/components/ConfirmDialog/ConfirmDialog.tsx](src/components/ConfirmDialog/ConfirmDialog.tsx) - 汎用確認ダイアログ
+- [src/components/ConfirmDialog/ConfirmDialog.css](src/components/ConfirmDialog/ConfirmDialog.css) - ダイアログスタイル
 
 **変更ファイル**:
-- [src/db/database.ts](src/db/database.ts) - deleteEntry, updateEntry メソッド追加
-- [src/hooks/useEntries.ts](src/hooks/useEntries.ts) - 編集・削除ロジック追加
-- [src/App.tsx](src/App.tsx) - 編集・削除ハンドラ追加
-- [src/components/EntryList/EntryList.tsx](src/components/EntryList/EntryList.tsx) - 編集・削除ボタン追加
+- [src/db/database.ts](src/db/database.ts) - `deleteDailyEntry`, `updateDailyEntry` メソッド追加
+- [src/hooks/useEntries.ts](src/hooks/useEntries.ts) - `deleteEntry`, `updateEntry` メソッド追加
+- [src/components/EntryForm/EntryForm.tsx](src/components/EntryForm/EntryForm.tsx) - 編集モード対応（`isEditMode`, `onCancel`プロパティ）
+- [src/components/EntryForm/EntryForm.css](src/components/EntryForm/EntryForm.css) - form-actionsとcancel-buttonスタイル
+- [src/components/EntryList/EntryList.tsx](src/components/EntryList/EntryList.tsx) - 編集・削除ボタン追加（SVGアイコン）
+- [src/components/EntryList/EntryList.css](src/components/EntryList/EntryList.css) - icon-buttonスタイル
+- [src/App.tsx](src/App.tsx) - 編集・削除フロー統合
 
-### 2.3 データエクスポート機能 💾
+**UI/UX改善**:
+- 編集モード時は「更新」ボタンと「キャンセル」ボタンを表示
+- 削除ボタンは赤色（`--md-error`）でdangerを明示
+- 確認ダイアログで誤削除を防止
+
+#### 2.3 データエクスポート機能 💾 ✅
 
 **実装内容**:
-1. JSON形式エクスポート
-2. CSV形式エクスポート（Excel対応）
-3. 日付範囲指定
+- JSON形式エクスポート（完全データバックアップ）
+- CSV形式エクスポート（Excel互換、UTF-8 BOM付き）
+- 日付範囲フィルタリング（開始日〜終了日指定可能）
+- エクスポート対象件数のリアルタイム表示
 
 **新規ファイル**:
-- `/src/utils/export.ts` - エクスポートロジック
-- `/src/components/ExportDialog/ExportDialog.tsx`
-- `/src/components/ExportDialog/ExportDialog.css`
+- [src/utils/export.ts](src/utils/export.ts) - エクスポートロジック（JSON/CSV）
+- [src/components/ExportDialog/ExportDialog.tsx](src/components/ExportDialog/ExportDialog.tsx) - エクスポートダイアログUI
+- [src/components/ExportDialog/ExportDialog.css](src/components/ExportDialog/ExportDialog.css) - ダイアログスタイル
 
 **変更ファイル**:
-- [src/App.tsx](src/App.tsx) - エクスポートダイアログ表示
+- [src/App.tsx](src/App.tsx) - エクスポートボタン（ダウンロードアイコン）とダイアログ追加
+- [src/App.css](src/App.css) - export-buttonスタイル
 
-### 2.4 アクセシビリティ改善 ♿
+**技術的ハイライト**:
+```typescript
+// Excel対応のCSVエクスポート
+const bom = '\uFEFF'; // UTF-8 BOM
+const escapeCSV = (text: string) => {
+  const escaped = text.replace(/"/g, '""');
+  return escaped.includes(',') || escaped.includes('\n')
+    ? `"${escaped}"` : escaped;
+};
+```
+
+#### 2.4 アクセシビリティ改善 ♿ ✅
 
 **実装内容**:
-1. 全ボタンにaria-label追加
-2. フォーム要素にaria-describedby追加
-3. ローディング状態にaria-live追加
-4. skip-to-contentリンク追加
-5. キーボードナビゲーション改善
+- WAI-ARIA属性の包括的な追加
+- キーボードナビゲーション完全対応（Enter/Spaceキー）
+- スクリーンリーダー対応の改善
+- Skip-to-contentリンク追加
+- ローディング状態とエラーのaria-live通知
 
 **変更ファイル**:
-- [src/App.tsx](src/App.tsx) - aria属性追加
-- [src/components/EntryForm/EntryForm.tsx](src/components/EntryForm/EntryForm.tsx) - aria属性追加
-- [src/components/AiComment/AiComment.tsx](src/components/AiComment/AiComment.tsx) - aria属性追加
-- [src/components/EntryList/EntryList.tsx](src/components/EntryList/EntryList.tsx) - aria属性追加
+- [src/App.tsx](src/App.tsx) - skip-to-content, role属性, aria属性追加
+- [src/App.css](src/App.css) - skip-to-contentスタイル（focus時に表示）
+- [src/components/EntryForm/EntryForm.tsx](src/components/EntryForm/EntryForm.tsx) - aria-label, aria-describedby, aria-invalid, aria-live追加
+- [src/components/AiComment/AiComment.tsx](src/components/AiComment/AiComment.tsx) - aria-busy, aria-live追加
+- [src/components/EntryList/EntryList.tsx](src/components/EntryList/EntryList.tsx) - キーボードナビゲーション, role属性追加
+
+**ARIA属性の使用例**:
+```typescript
+// タブインターフェース
+<nav role="tablist" aria-label="ビュー切り替え">
+  <button role="tab" aria-selected={active} aria-controls="panel-id">
+
+// キーボードナビゲーション
+onKeyDown={(e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    handleEntryClick(entry);
+  }
+}}
+
+// ローディング状態の通知
+<span aria-live="polite" aria-atomic="true">
+  {isLoading ? 'コメント取得中...' : 'AIコメントを取得'}
+</span>
+```
+
+### Git管理
+
+**ブランチ**: `feat/sprint2-ux-improvements`
+**コミット**: `43186f4`
+**統計**:
+- 32ファイル変更
+- +2,056行追加
+- -300行削除
+
+**コミットメッセージ**:
+```
+feat: Sprint 2 - UX改善機能の実装
+
+完了した機能:
+1. ダークモード実装 (Material Design 3)
+2. エントリー編集・削除機能
+3. データエクスポート (JSON/CSV)
+4. アクセシビリティ改善 (WAI-ARIA)
+
+新規ファイル (8):
+- src/hooks/useTheme.ts
+- src/components/ThemeToggle/*
+- src/components/ConfirmDialog/*
+- src/components/ExportDialog/*
+- src/utils/export.ts
+
+主要な変更:
+- IndexedDB version 2 マイグレーション (settings テーブル追加)
+- Material Design 3 ダークテーマCSS変数
+- 完全なキーボードナビゲーション対応
+- Excel互換CSVエクスポート (UTF-8 BOM)
+```
+
+### 成功基準の達成状況
+
+- ✅ ダークモード切り替えが動作し、設定が永続化される
+- ✅ エントリーの編集・削除が正常に動作する
+- ✅ JSON/CSVエクスポートが正常に動作する（Excelで開ける）
+- ✅ すべてのインタラクティブ要素にaria属性が設定される
+- ✅ キーボードのみで全機能が操作可能
+- ✅ スクリーンリーダーで主要機能が使用可能
+
+### 解決した技術的課題
+
+1. **IndexedDBマイグレーション**: Dexie.jsの自動マイグレーションで既存データを保持しつつversion 2へ移行
+2. **テーマフラッシュ防止**: isLoadingフラグでテーマ適用前のレンダリングを防止
+3. **CSVのExcel互換性**: UTF-8 BOM (`\uFEFF`) とダブルクォートエスケープ (`""`) で完全対応
+4. **型安全性の維持**: すべての新機能でTypeScript厳格型チェックをパス
+
+### 学んだこと
+
+- Material Design 3のカラーシステムは`color-scheme`プロパティと組み合わせると効果的
+- `prefers-color-scheme`のmatchMediaリスナーは必ずクリーンアップが必要
+- WAI-ARIAの`aria-live="polite"`と`assertive`の使い分けが重要（ローディングはpolite、エラーはassertive）
+- CSVエクスポートはカンマ・改行・ダブルクォートのエスケープが必須
 
 ---
 
@@ -276,19 +390,27 @@ npm run workers:deploy
 ## 📈 進捗状況
 
 ### 完了 ✅
+
+**Sprint 1** (セキュリティ修正 + コード品質向上):
 - [x] Cloudflare Workers実装（セキュリティ修正）
 - [x] Logger実装 + console.log削除
 - [x] テスト修正（82%パス率達成）
 - [x] 型定義確認
 - [x] README更新（セットアップ手順、セキュリティセクション）
 
+**Sprint 2** (UX改善の基盤):
+- [x] ダークモード実装
+- [x] エントリー編集・削除機能
+- [x] データエクスポート機能
+- [x] アクセシビリティ改善
+
 ### 次のステップ 📝
-- [ ] ダークモード実装
-- [ ] エントリー編集・削除機能
-- [ ] データエクスポート機能
-- [ ] アクセシビリティ改善
+
+**Sprint 3** (パフォーマンス + リファクタ):
 - [ ] App.tsxリファクタリング
 - [ ] パフォーマンス最適化
+
+**Sprint 4** (エンゲージメント機能):
 - [ ] 統計・インサイト表示
 - [ ] リマインダー機能（オプション）
 
@@ -313,8 +435,8 @@ npm run workers:deploy
 
 ## 📝 メモ
 
-- プランの詳細は[/home/orz/.claude/plans/crystalline-munching-blossom.md](/home/orz/.claude/plans/crystalline-munching-blossom.md)を参照
+- Sprint 2実装プランの詳細は[/home/orz/.claude/plans/synthetic-discovering-iverson.md](/home/orz/.claude/plans/synthetic-discovering-iverson.md)を参照
 - 各Sprint完了後はテスト実行・動作確認を実施
 - Git commitは論理的な単位で分割
 
-**最終更新**: 2026-01-05
+**最終更新**: 2026-01-06
