@@ -56,8 +56,9 @@ function App() {
         const today = savedEntry.date;
         const filledItems = items.filter(item => item.trim() !== '');
         
-        // すべての項目のコメント取得操作をPromise配列にまとめる
-        const commentPromises = filledItems.map(async (item, index) => {
+        // 各項目のコメントを順次取得（レート制限対策）
+        for (let index = 0; index < filledItems.length; index++) {
+          const item = filledItems[index];
           try {
             // 実際にコメントを取得
             const comment = await getAiCommentForItem(item, () => isOnline);
@@ -65,14 +66,10 @@ function App() {
             await saveItemComment(today, index, comment);
             // リクエスト済みフラグも設定
             await markItemCommentRequested(today, index);
-            return { success: true, index, comment };
           } catch (error) {
-            return { success: false, index, error };
+            console.error(`Item ${index} comment fetch failed:`, error);
           }
-        });
-        
-        // すべてのコメント取得が完了するのを待つ
-        await Promise.all(commentPromises);
+        }
 
         // 重要: すべてのコメント取得が完了したら、UIを強制的に更新
         // refreshTriggerをインクリメントしてUIの再レンダリングを強制
