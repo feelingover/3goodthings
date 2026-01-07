@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import './EntryForm.css';
 
 interface EntryFormProps {
@@ -13,7 +13,7 @@ interface EntryFormProps {
   isEditMode?: boolean;
 }
 
-export function EntryForm({
+export const EntryForm = memo(function EntryForm({
   initialItems = ['', '', ''],
   maxItems = 3,
   maxLength = 1000,
@@ -128,4 +128,4 @@ export function EntryForm({
       </form>
     </div>
   );
-}
+});

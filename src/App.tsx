@@ -1,180 +1,100 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { EntryForm } from './components/EntryForm/EntryForm';
 import { EntryList } from './components/EntryList/EntryList';
 import { ThemeToggle } from './components/ThemeToggle/ThemeToggle';
 import { ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
 import { ExportDialog } from './components/ExportDialog/ExportDialog';
 import { useEntries } from './hooks/useEntries';
+import { useEntryView } from './hooks/useEntryView';
+import { useEntryEditing } from './hooks/useEntryEditing';
+import { useCommentManagement } from './hooks/useCommentManagement';
 import { AiCommentItem } from './components/AiComment/AiComment';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
-import { getAiCommentForItem } from './services/openai';
 import type { DailyEntry } from './types';
 import './App.css';
 
 function App() {
-  const [activeView, setActiveView] = useState<'today' | 'history'>('today');
-  const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null);
-  // UI更新のためのトリガーを追加
-  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  // 編集・削除のための状態
-  const [editingEntry, setEditingEntry] = useState<DailyEntry | null>(null);
-  const [deleteConfirmEntry, setDeleteConfirmEntry] = useState<DailyEntry | null>(null);
   // エクスポートダイアログの状態
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+
+  // カスタムフックで状態管理
+  const { activeView, selectedEntry, setActiveView, selectEntry } = useEntryView();
+  const { editingEntry, deleteConfirmEntry, startEdit, cancelEdit, confirmDelete, cancelDelete }
+    = useEntryEditing();
+
   const { todayEntry, allEntries, isLoading, saveEntry,
           saveItemComment, markItemCommentRequested, getEntryByDate,
           deleteEntry, updateEntry } = useEntries();
   const { isOnline } = useNetworkStatus();
 
-  // todayEntryが変更されたときに再レンダリング
-  useEffect(() => {
-    // UI更新トリガー
-  }, [todayEntry, refreshTrigger]);
+  // コメント管理（refreshTrigger不要！）
+  const { handleSaveItemComment, handleItemCommentRequested, handleSaveEntryAndGetComment }
+    = useCommentManagement({
+        saveItemComment,
+        markItemCommentRequested,
+        getEntryByDate,
+        selectedEntry,
+        onSelectedEntryUpdate: selectEntry
+      });
 
-  // 選択されたエントリーのリセット
-  useEffect(() => {
-    if (activeView === 'today') {
-      setSelectedEntry(null);
-    }
-  }, [activeView]);
-
-  // エントリー保存ハンドラ
-  const handleSaveEntry = async (items: string[]) => {
+  // エントリー保存ハンドラ（useCallback化）
+  const handleSaveEntry = useCallback(async (items: string[]) => {
     await saveEntry(items);
-    setActiveView('today'); // 保存後は今日のビューに切り替え
-  };
-  
-  // エントリー保存とコメント自動取得ハンドラ
-  const handleSaveEntryAndGetComment = async (items: string[]) => {
-    try {
-      // 1. エントリーを保存
-      const savedEntry = await saveEntry(items);
-      setActiveView('today'); // 今日のビューに切り替え
-      
-      // 2. 保存完了後、自動的にAIコメントを取得 (オンライン時のみ)
-      if (isOnline) {
-        const today = savedEntry.date;
-        const filledItems = items.filter(item => item.trim() !== '');
-        
-        // 各項目のコメントを順次取得（レート制限対策）
-        for (let index = 0; index < filledItems.length; index++) {
-          const item = filledItems[index];
-          try {
-            // 実際にコメントを取得
-            const comment = await getAiCommentForItem(item, () => isOnline);
-            // コメントを保存
-            await saveItemComment(today, index, comment);
-            // リクエスト済みフラグも設定
-            await markItemCommentRequested(today, index);
-          } catch (error) {
-            console.error(`Item ${index} comment fetch failed:`, error);
-          }
-        }
-
-        // 重要: すべてのコメント取得が完了したら、UIを強制的に更新
-        // refreshTriggerをインクリメントしてUIの再レンダリングを強制
-        setRefreshTrigger(prev => prev + 1);
-      }
-    } catch (err) {
-      // エラーは握りつぶさずに通知する可能性あり
-    }
-  };
-
-  
-  // 項目ごとのコメント保存ハンドラ (日付指定対応版)
-  const handleSaveItemComment = async (itemIndex: number, comment: string) => {
-    try {
-      if (activeView === 'today' && todayEntry) {
-        await saveItemComment(todayEntry.date, itemIndex, comment);
-        // 今日のエントリーデータを更新
-        setRefreshTrigger(prev => prev + 1);
-      } else if (selectedEntry) {
-        await saveItemComment(selectedEntry.date, itemIndex, comment);
-        // 選択中のエントリーデータを再読み込み (重要：異なる日付間でのコメント混同を防止)
-        const updatedEntry = await getEntryByDate(selectedEntry.date);
-        if (updatedEntry) {
-          setSelectedEntry(updatedEntry);
-        }
-      }
-    } catch (err) {
-      // エラーハンドリング
-    }
-  };
-
-  // 項目ごとのコメントリクエスト済みマークハンドラ (日付指定対応版)
-  const handleItemCommentRequested = async (itemIndex: number) => {
-    try {
-      if (activeView === 'today' && todayEntry) {
-        await markItemCommentRequested(todayEntry.date, itemIndex);
-        setRefreshTrigger(prev => prev + 1);
-      } else if (selectedEntry) {
-        await markItemCommentRequested(selectedEntry.date, itemIndex);
-        // 選択中のエントリーデータを再読み込み
-        const updatedEntry = await getEntryByDate(selectedEntry.date);
-        if (updatedEntry) {
-          setSelectedEntry(updatedEntry);
-        }
-      }
-    } catch (err) {
-      // エラーハンドリング
-    }
-  };
-
-  // エントリー選択ハンドラ
-  const handleSelectEntry = async (entry: DailyEntry) => {
-    // 選択されたエントリーを最新のデータで再取得（重要）
-    const freshEntry = await getEntryByDate(entry.date);
-
-    if (freshEntry) {
-      setSelectedEntry(freshEntry);
-    } else {
-      setSelectedEntry(entry);
-    }
-
-    // 履歴表示時にもUIを更新するためのトリガー
-    setRefreshTrigger(prev => prev + 1);
-  };
-
-  // 編集ハンドラ
-  const handleEditEntry = (entry: DailyEntry) => {
-    setEditingEntry(entry);
     setActiveView('today');
-  };
+  }, [saveEntry, setActiveView]);
 
-  // 更新ハンドラ
-  const handleUpdateEntry = async (items: string[]) => {
+  // エントリー保存とコメント自動取得のラッパー
+  const handleSaveAndComment = useCallback(async (items: string[]) => {
+    const savedEntry = await saveEntry(items);
+    setActiveView('today');
+    await handleSaveEntryAndGetComment(savedEntry, items);
+  }, [saveEntry, setActiveView, handleSaveEntryAndGetComment]);
+
+  // エントリー選択ハンドラ（useCallback化）
+  const handleSelectEntry = useCallback(async (entry: DailyEntry) => {
+    const freshEntry = await getEntryByDate(entry.date);
+    selectEntry(freshEntry || entry);
+  }, [getEntryByDate, selectEntry]);
+
+  // 編集ハンドラ（useCallback化）
+  const handleEditEntry = useCallback((entry: DailyEntry) => {
+    startEdit(entry);
+    setActiveView('today');
+  }, [startEdit, setActiveView]);
+
+  // 更新ハンドラ（useCallback化）
+  const handleUpdateEntry = useCallback(async (items: string[]) => {
     if (!editingEntry) return;
     await updateEntry(editingEntry.date, items);
-    setEditingEntry(null);
-    setRefreshTrigger(prev => prev + 1);
-  };
+    cancelEdit();
+  }, [editingEntry, updateEntry, cancelEdit]);
 
-  // 編集キャンセルハンドラ
-  const handleCancelEdit = () => {
-    setEditingEntry(null);
-  };
-
-  // 削除ハンドラ
-  const handleDeleteEntry = (entry: DailyEntry) => {
-    setDeleteConfirmEntry(entry);
-  };
-
-  // 削除確定ハンドラ
-  const handleConfirmDelete = async () => {
+  // 削除確定ハンドラ（useCallback化）
+  const handleConfirmDelete = useCallback(async () => {
     if (!deleteConfirmEntry) return;
     await deleteEntry(deleteConfirmEntry.date);
-    setDeleteConfirmEntry(null);
     if (selectedEntry?.date === deleteConfirmEntry.date) {
-      setSelectedEntry(null);
+      selectEntry(null);
     }
-    setRefreshTrigger(prev => prev + 1);
-  };
+    cancelDelete();
+  }, [deleteConfirmEntry, deleteEntry, selectedEntry, selectEntry, cancelDelete]);
+
+  // 日付フォーマット関数（useCallback化）
+  const formatDate = useCallback((dateStr: string): string => {
+    const date = new Date(dateStr);
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const weekday = weekdays[date.getDay()];
+    return `${year}年${month}月${day}日 (${weekday})`;
+  }, []);
 
   // 現在表示すべきエントリーを決定（編集モードも考慮）
   const currentEntry = editingEntry || (activeView === 'today' ? todayEntry : selectedEntry);
 
-  // エントリーの項目内容を取得
-  const getEntryItems = (): string[] => {
+  // エントリーの項目内容を取得（useMemo化）
+  const entryItems = useMemo(() => {
     if (!currentEntry) return ['', '', ''];
 
     // 既存の項目を取得し、3つに満たない場合は空文字で埋める
@@ -183,7 +103,7 @@ function App() {
       items.push('');
     }
     return items;
-  };
+  }, [currentEntry]);
 
   return (
     <div className="app">
@@ -243,10 +163,10 @@ function App() {
         <main id="main-content" className="today-view" role="main">
           <div id="today-panel" role="tabpanel" aria-labelledby="today-tab">
           <EntryForm
-            initialItems={getEntryItems()}
+            initialItems={entryItems}
             onSave={editingEntry ? handleUpdateEntry : handleSaveEntry}
-            onSaveAndGetComment={editingEntry ? undefined : handleSaveEntryAndGetComment}
-            onCancel={editingEntry ? handleCancelEdit : undefined}
+            onSaveAndGetComment={editingEntry ? undefined : handleSaveAndComment}
+            onCancel={editingEntry ? cancelEdit : undefined}
             isEditMode={!!editingEntry}
             disabled={isLoading}
           />
@@ -267,8 +187,8 @@ function App() {
                       itemIndex={index}
                       initialComment={item.aiComment}
                       hasRequestedComment={item.hasRequestedComment || false}
-                      onCommentSaved={handleSaveItemComment}
-                      onCommentRequested={handleItemCommentRequested}
+                      onCommentSaved={(itemIndex, comment) => handleSaveItemComment(todayEntry, itemIndex, comment)}
+                      onCommentRequested={(itemIndex) => handleItemCommentRequested(todayEntry, itemIndex)}
                     />
                   </div>
                 </div>
@@ -287,7 +207,7 @@ function App() {
               entries={allEntries}
               onSelectEntry={handleSelectEntry}
               onEditEntry={handleEditEntry}
-              onDeleteEntry={handleDeleteEntry}
+              onDeleteEntry={confirmDelete}
               isLoading={isLoading}
             />
           </div>
@@ -311,8 +231,8 @@ function App() {
                         itemIndex={index}
                         initialComment={item.aiComment}
                         hasRequestedComment={item.hasRequestedComment || false}
-                        onCommentSaved={handleSaveItemComment}
-                        onCommentRequested={handleItemCommentRequested}
+                        onCommentSaved={(itemIndex, comment) => handleSaveItemComment(selectedEntry, itemIndex, comment)}
+                        onCommentRequested={(itemIndex) => handleItemCommentRequested(selectedEntry, itemIndex)}
                       />
                     </div>
                   </div>
@@ -334,7 +254,7 @@ function App() {
         confirmText="削除"
         cancelText="キャンセル"
         onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteConfirmEntry(null)}
+        onCancel={cancelDelete}
         variant="danger"
       />
 
@@ -345,18 +265,6 @@ function App() {
       />
     </div>
   );
-}
-
-// 日付を日本語のフォーマットに変換する関数
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const weekday = weekdays[date.getDay()];
-  
-  return `${year}年${month}月${day}日 (${weekday})`;
 }
 
 export default App

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { DailyEntry } from '../../types';
 import './EntryList.css';
 
@@ -10,7 +10,7 @@ interface EntryListProps {
   isLoading?: boolean;
 }
 
-export function EntryList({
+export const EntryList = memo(function EntryList({
   entries,
   onSelectEntry,
   onEditEntry,
@@ -116,4 +116,4 @@ export function EntryList({
       </ul>
     </div>
   );
-}
+});

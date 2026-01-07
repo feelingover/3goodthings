@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { getAiComment, getAiCommentForItem, checkNetworkConnection } from '../../services/openai';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import './AiComment.css';
@@ -21,7 +21,7 @@ interface AiCommentProps {
 }
 
   // 単一項目用のAIコメントコンポーネント
-export function AiCommentItem({
+export const AiCommentItem = memo(function AiCommentItem({
   item,
   itemIndex,
   initialComment,
@@ -126,7 +126,7 @@ export function AiCommentItem({
       {renderContent()}
     </div>
   );
-}
+});
 
 // 従来の複数項目用AIコメントコンポーネント（後方互換性のため維持）
 export function AiComment({
