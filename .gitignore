@@ -1,5 +1,6 @@
 # local
 .clinerules/*_local.md
+.claude/settings.local.json
 .env
 .dev.vars
 

@@ -1,6 +1,7 @@
-# 3 Good Things - システムパターン
+# 3 Good Things - システムアーキテクチャ
 
 ## アーキテクチャ概要
+
 「3 Good Things」は、クライアントサイドのみで動作するReactアプリケーションで、以下のアーキテクチャパターンに基づいて設計されています：
 
 ```
@@ -37,13 +38,13 @@
   /* カラーパレット */
   --md-primary: #6750A4;
   --md-primary-light: #D0BCFF;
-  
+
   /* エレベーション */
   --md-shadow-1: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
-  
+
   /* アニメーション */
   --md-transition-standard: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   /* スペーシング */
   --md-spacing-unit: 8px;
 }
@@ -94,13 +95,13 @@ class AppDatabase extends Dexie {
 
   constructor() {
     super(config.db.name);
-    
+
     this.version(config.db.version).stores({
       dailyEntries: '++id, date',        // 日付でインデックス化
       entryItems: '++id, &[date+index]', // 日付+インデックスの複合ユニーク
     });
   }
-  
+
   // データアクセスメソッド
   // ...
 }
