@@ -260,6 +260,129 @@ feat: Sprint 2 - UX改善機能の実装
 
 ---
 
+## 🔧 動作確認とバグ修正（完了）
+
+### 実施期間
+
+2026-01-07（1日）
+
+### 発見・修正した問題
+
+#### 1. Service Worker二重登録エラー ❌→✅
+
+**エラー**:
+```
+The script has an unsupported MIME type ('text/html')
+Service Worker registration failed: SecurityError
+```
+
+**原因**:
+
+- [src/main.tsx](src/main.tsx)で手動Service Worker登録
+- `vite-plugin-pwa`が自動登録するため二重登録
+- 開発環境で`devOptions`未設定のため、`sw.js`が生成されない
+
+**修正内容**:
+
+- ✅ [src/main.tsx](src/main.tsx) - 手動Service Worker登録を削除
+- ✅ [vite.config.ts](vite.config.ts:11-14) - `devOptions`を追加（開発環境でSW有効化）
+
+#### 2. PWAアイコン404エラー ❌→✅
+
+**エラー**:
+```
+Error while trying to use the following icon from the Manifest:
+http://127.0.0.1:5173/icons/icon-192x192.png
+```
+
+**原因**:
+
+`public/icons/`ディレクトリが空
+
+**修正内容**:
+
+- ✅ [vite.config.ts](vite.config.ts:23-29) - 一時的に`vite.svg`をアイコンとして使用
+- ⏳ **TODO**: 本番リリース前に正式なPWAアイコン作成（192x192, 512x512のPNG）
+
+#### 3. CORSエラー（127.0.0.1） ❌→✅
+
+**エラー**:
+```
+Access to fetch at 'http://localhost:8787/api/comment' from origin 'http://127.0.0.1:5173'
+has been blocked by CORS policy
+```
+
+**原因**:
+
+[wrangler.toml](wrangler.toml)で`localhost`のみ許可、`127.0.0.1`未対応
+
+**修正内容**:
+
+- ✅ [wrangler.toml](wrangler.toml:13) - `ALLOWED_ORIGINS`に`127.0.0.1`を追加
+- `localhost`と`127.0.0.1`は技術的には同じIPだが、CORSポリシーでは別のオリジン
+
+#### 4. AIコメント取得503エラー ❌→✅
+
+**エラー**: `POST http://localhost:8787/api/comment 503 Service Unavailable`
+
+**症状**:
+
+- 1つ目のコメント取得は成功
+- 2つ目と3つ目が503エラーで失敗
+
+**原因**:
+
+- [App.tsx](src/App.tsx)で`Promise.all`を使用し、3つのリクエストを並列実行
+- OpenAI APIのレート制限に抵触
+
+**修正内容**:
+
+- ✅ [src/App.tsx](src/App.tsx:59-72) - 並列実行→順次実行に変更（`for`ループ）
+- 各リクエストが順番に実行されるため、レート制限を回避
+- エラーハンドリング改善（1つ失敗しても他の取得は継続）
+
+#### 5. その他の修正 ✅
+
+**追加修正**:
+
+- ✅ [.gitignore](.gitignore:22) - `dev-dist/`を追加
+- ✅ [package-lock.json](package-lock.json) - 依存関係更新
+
+### 動作確認結果
+
+**全機能正常動作確認済み**:
+
+- ✅ 🌙 **ダークモード** - Light/Dark/System切り替え、永続化
+- ✅ ✏️ **エントリー編集** - 既存データの更新
+- ✅ 🗑️ **エントリー削除** - 確認ダイアログ、物理削除
+- ✅ 💾 **データエクスポート** - JSON/CSV、日付フィルタ、Excel互換
+- ✅ ♿ **アクセシビリティ** - キーボードナビゲーション、ARIA属性
+- ✅ 🤖 **AIコメント取得** - 3つすべて成功、レート制限クリア
+
+### Git管理とコミット
+
+**ブランチ**: `fix/dev-environment-setup`
+**PR**: [#9](https://github.com/feelingover/3goodthings/pull/9)
+**コミット**: `bb0ad5b`
+
+**変更ファイル**: 6ファイル
+
+- `.gitignore` - dev-dist追加
+- `src/main.tsx` - Service Worker手動登録削除
+- `vite.config.ts` - PWA devOptions & アイコン設定
+- `wrangler.toml` - CORS設定（127.0.0.1追加）
+- `src/App.tsx` - AIコメント取得を順次実行に変更
+- `package-lock.json` - 依存関係更新
+
+### 今回学んだこと
+
+1. **Service Worker管理**: `vite-plugin-pwa`使用時は手動登録不要。`devOptions`で開発環境対応が必要
+2. **CORS理解**: `localhost`と`127.0.0.1`は同じIPでもCORS的には別オリジン
+3. **レート制限対策**: 並列リクエストは速いが、APIレート制限に注意。重要なデータは順次実行が安全
+4. **PWA開発**: 開発環境と本番環境で異なる設定が必要（アイコン、Service Worker等）
+
+---
+
 ## 🚀 Sprint 3: パフォーマンス + リファクタ
 
 ### 3.1 App.tsxリファクタリング
@@ -439,4 +562,4 @@ npm run workers:deploy
 - 各Sprint完了後はテスト実行・動作確認を実施
 - Git commitは論理的な単位で分割
 
-**最終更新**: 2026-01-06
+**最終更新**: 2026-01-07
