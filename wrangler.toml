@@ -9,8 +9,8 @@ compatibility_date = "2025-01-05"
 # wrangler secret put OPENAI_API_KEY
 # wrangler secret put OPENAI_MODEL
 
-# CORS設定用
-ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173"
+# CORS設定用（localhostと127.0.0.1の両方を許可）
+ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173"
 
 # 本番環境用の設定（デプロイ時に追加）
 [env.production]
