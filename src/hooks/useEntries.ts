@@ -119,23 +119,31 @@ export function useEntries(): UseEntriesReturn {
   const saveItemComment = async (date: string, itemIndex: number, comment: string): Promise<void> => {
     try {
       const entry = await db.getDailyEntryByDate(date);
-      
+
       if (entry && entry.items[itemIndex]) {
         // 項目のコメントを更新
         entry.items[itemIndex].aiComment = comment;
         entry.items[itemIndex].hasRequestedComment = true;
-        
+
         await db.saveDailyEntry(entry);
-        
+
         // 今日の日付の場合、todayEntryを更新
         if (date === getTodayDate()) {
           setTodayEntry({...entry});
         }
-        
-        // 全エントリーリストも更新
-        await loadAllEntries();
+
+        // 該当エントリーのみ部分更新（全件読み込みを回避）
+        setAllEntries(prevEntries => {
+          const index = prevEntries.findIndex(e => e.date === date);
+          if (index === -1) {
+            // 新規エントリーの場合は追加（日付降順）
+            return [entry, ...prevEntries].sort((a, b) => b.date.localeCompare(a.date));
+          }
+          // 既存エントリーの場合は置き換え
+          return prevEntries.map(e => e.date === date ? entry : e);
+        });
       } else {
-        const errorMessage = !entry 
+        const errorMessage = !entry
           ? `saveItemComment: 指定された日付のエントリーが存在しません。date: ${date}`
           : `saveItemComment: 指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`;
         console.warn(errorMessage);
@@ -154,26 +162,34 @@ export function useEntries(): UseEntriesReturn {
   const markItemCommentRequested = async (date: string, itemIndex: number): Promise<void> => {
     try {
       const entry = await db.getDailyEntryByDate(date);
-      
+
       if (entry && entry.items[itemIndex]) {
         entry.items[itemIndex].hasRequestedComment = true;
         await db.saveDailyEntry(entry);
-        
+
         // 今日の日付の場合、todayEntryを更新
         if (date === getTodayDate()) {
           setTodayEntry({...entry});
         }
-        
-        // 全エントリーリストも更新
-        await loadAllEntries();
+
+        // 該当エントリーのみ部分更新（全件読み込みを回避）
+        setAllEntries(prevEntries => {
+          const index = prevEntries.findIndex(e => e.date === date);
+          if (index === -1) {
+            // 新規エントリーの場合は追加（日付降順）
+            return [entry, ...prevEntries].sort((a, b) => b.date.localeCompare(a.date));
+          }
+          // 既存エントリーの場合は置き換え
+          return prevEntries.map(e => e.date === date ? entry : e);
+        });
       } else {
         // エラーログを出力
-        const errorMessage = !entry 
+        const errorMessage = !entry
           ? `markItemCommentRequested: 指定された日付のエントリーが存在しません。date: ${date}`
           : `markItemCommentRequested: 指定されたインデックス(${itemIndex})のアイテムが存在しません。現在のアイテム数: ${entry.items.length}`;
-        
+
         console.warn(errorMessage);
-        
+
         // エラー状態を設定して上流コンポーネントでハンドリングできるようにする
         const error = new Error(errorMessage);
         setError(error);
