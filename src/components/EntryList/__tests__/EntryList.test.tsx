@@ -76,18 +76,20 @@ describe('EntryList コンポーネント', () => {
     
     // 最初のエントリーをクリック
     const firstEntry = screen.getByText(/5月16日/);
-    fireEvent.click(firstEntry.parentElement!);
+    const firstListItem = firstEntry.closest('li');
+    fireEvent.click(firstEntry); // entry-content内の要素をクリックしてもイベントバブリングで親のハンドラが呼ばれるはずだが、実装ではentry-contentにonClickがある
     
     // selectedクラスが追加されているか確認
-    expect(firstEntry.parentElement).toHaveClass('selected');
+    expect(firstListItem).toHaveClass('selected');
     
     // 2つ目のエントリーをクリック
     const secondEntry = screen.getByText(/5月15日/);
-    fireEvent.click(secondEntry.parentElement!);
+    const secondListItem = secondEntry.closest('li');
+    fireEvent.click(secondEntry);
     
     // クラスが切り替わっているか確認
-    expect(firstEntry.parentElement).not.toHaveClass('selected');
-    expect(secondEntry.parentElement).toHaveClass('selected');
+    expect(firstListItem).not.toHaveClass('selected');
+    expect(secondListItem).toHaveClass('selected');
   });
   
   test('日本語の曜日が正しく表示される', () => {

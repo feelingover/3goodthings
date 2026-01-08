@@ -24,6 +24,7 @@ dev-dist
 *.local
 
 # Editor directories and files
+.serena
 .vscode/*
 !.vscode/extensions.json
 .idea

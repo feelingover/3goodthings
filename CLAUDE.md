@@ -21,6 +21,7 @@
 毎日3つの良いことを記録し、AIからのコメントをもらえる習慣化支援PWAアプリケーション
 
 **技術スタック**:
+
 - React 19 + TypeScript + Vite
 - IndexedDB (Dexie.js)
 - OpenAI API (GPT-4o)
@@ -39,12 +40,14 @@
 **問題**: OpenAI API keyがブラウザに露出していた（dangerouslyAllowBrowser: true）
 
 **実装内容**:
+
 - Cloudflare Workers作成（[workers/index.ts](workers/index.ts)）
 - OpenAI API呼び出しをバックエンドに移行
 - フロントエンドから環境変数のAPI key削除
 - CORS設定とエラーハンドリング実装
 
 **変更ファイル**:
+
 - [workers/index.ts](workers/index.ts) - OpenAI APIプロキシ実装
 - [wrangler.toml](wrangler.toml) - Cloudflare Workers設定
 - [src/services/openai.ts](src/services/openai.ts:1-93) - fetch APIへの移行
@@ -55,6 +58,7 @@
 - [README.md](README.md) - セットアップ手順とセキュリティセクション追加
 
 **セキュリティ効果**:
+
 - ✅ API key露出リスク完全解消
 - ✅ サーバー側でレート制限・ログ管理可能
 - ✅ CORS設定により許可されたオリジンからのみアクセス可能
@@ -64,10 +68,12 @@
 **問題**: 本番環境にデバッグログが10箇所残留
 
 **実装内容**:
+
 - 開発環境のみログ出力するloggerユーティリティ作成（[src/utils/logger.ts](src/utils/logger.ts)）
 - 全console.logをlogger呼び出しに置き換えまたは削除
 
 **変更ファイル**:
+
 - [src/utils/logger.ts](src/utils/logger.ts) - Logger実装
 - [src/App.tsx](src/App.tsx) - 8箇所のconsole.log削除
 - [src/components/AiComment/AiComment.tsx](src/components/AiComment/AiComment.tsx) - 2箇所削除
@@ -76,16 +82,19 @@
 #### 3. テスト修正 ✅
 
 **実施内容**:
-- [src/__tests__/integration.test.tsx](src/__tests__/integration.test.tsx) - global.fetch mock追加
-- [src/hooks/__tests__/useEntries.test.tsx](src/hooks/__tests__/useEntries.test.tsx) - consoleErrorSpy修正、型期待値更新
-- [src/components/AiComment/__tests__/AiComment.test.tsx](src/components/AiComment/__tests__/AiComment.test.tsx) - 期待値更新
+
+- [src/**tests**/integration.test.tsx](src/__tests__/integration.test.tsx) - global.fetch mock追加
+- [src/hooks/**tests**/useEntries.test.tsx](src/hooks/__tests__/useEntries.test.tsx) - consoleErrorSpy修正、型期待値更新
+- [src/components/AiComment/**tests**/AiComment.test.tsx](src/components/AiComment/__tests__/AiComment.test.tsx) - 期待値更新
 
 **結果**: 82% テストパス率（41/50 tests passing）
+
 - 残り9件はReact act()警告とタイムアウト（機能的な問題なし）
 
 #### 4. 型定義確認 ✅
 
 **確認結果**: [src/types/index.ts](src/types/index.ts:1-15) - 型定義は正しい
+
 - `hasRequestedComment`と`aiComment`は`EntryItem`のみに存在（`DailyEntry`には不要）
 
 ---
@@ -93,6 +102,7 @@
 ## 🎉 Sprint 2: UX改善の基盤（完了）
 
 ### 実装期間
+
 2026-01-05 〜 2026-01-06（2日間）
 
 ### 完了した作業
@@ -100,6 +110,7 @@
 #### 2.1 ダークモード実装 🌙 ✅
 
 **実装内容**:
+
 - Material Design 3カラーシステムに基づくダークテーマ
 - システムテーマ（prefers-color-scheme）の自動検出
 - IndexedDB設定テーブルでテーマ設定を永続化
@@ -107,11 +118,13 @@
 - テーマ変更時のフラッシュ防止（isLoading制御）
 
 **新規ファイル**:
+
 - [src/hooks/useTheme.ts](src/hooks/useTheme.ts) - テーマ状態管理カスタムフック
 - [src/components/ThemeToggle/ThemeToggle.tsx](src/components/ThemeToggle/ThemeToggle.tsx) - 3つのテーマボタンUI
 - [src/components/ThemeToggle/ThemeToggle.css](src/components/ThemeToggle/ThemeToggle.css) - トグルボタンスタイル
 
 **変更ファイル**:
+
 - [src/db/database.ts](src/db/database.ts) - settingsテーブル追加（version 2へマイグレーション）
 - [src/config.ts](src/config.ts) - DBバージョン 1→2 に更新
 - [src/index.css](src/index.css) - Material Design 3 ダークテーマCSS変数追加
@@ -119,6 +132,7 @@
 - [src/App.css](src/App.css) - header-actionsレイアウト追加
 
 **技術的ハイライト**:
+
 ```typescript
 // システムテーマの監視
 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -131,16 +145,19 @@ document.documentElement.setAttribute('data-theme', effectiveTheme);
 #### 2.2 エントリー編集・削除機能 ✏️🗑️ ✅
 
 **実装内容**:
+
 - 既存EntryFormコンポーネントを再利用した編集モード
 - 物理削除（完全削除）機能
 - 削除確認ダイアログ（dangerバリアント対応）
 - ESCキーで確認ダイアログをキャンセル可能
 
 **新規ファイル**:
+
 - [src/components/ConfirmDialog/ConfirmDialog.tsx](src/components/ConfirmDialog/ConfirmDialog.tsx) - 汎用確認ダイアログ
 - [src/components/ConfirmDialog/ConfirmDialog.css](src/components/ConfirmDialog/ConfirmDialog.css) - ダイアログスタイル
 
 **変更ファイル**:
+
 - [src/db/database.ts](src/db/database.ts) - `deleteDailyEntry`, `updateDailyEntry` メソッド追加
 - [src/hooks/useEntries.ts](src/hooks/useEntries.ts) - `deleteEntry`, `updateEntry` メソッド追加
 - [src/components/EntryForm/EntryForm.tsx](src/components/EntryForm/EntryForm.tsx) - 編集モード対応（`isEditMode`, `onCancel`プロパティ）
@@ -150,6 +167,7 @@ document.documentElement.setAttribute('data-theme', effectiveTheme);
 - [src/App.tsx](src/App.tsx) - 編集・削除フロー統合
 
 **UI/UX改善**:
+
 - 編集モード時は「更新」ボタンと「キャンセル」ボタンを表示
 - 削除ボタンは赤色（`--md-error`）でdangerを明示
 - 確認ダイアログで誤削除を防止
@@ -157,21 +175,25 @@ document.documentElement.setAttribute('data-theme', effectiveTheme);
 #### 2.3 データエクスポート機能 💾 ✅
 
 **実装内容**:
+
 - JSON形式エクスポート（完全データバックアップ）
 - CSV形式エクスポート（Excel互換、UTF-8 BOM付き）
 - 日付範囲フィルタリング（開始日〜終了日指定可能）
 - エクスポート対象件数のリアルタイム表示
 
 **新規ファイル**:
+
 - [src/utils/export.ts](src/utils/export.ts) - エクスポートロジック（JSON/CSV）
 - [src/components/ExportDialog/ExportDialog.tsx](src/components/ExportDialog/ExportDialog.tsx) - エクスポートダイアログUI
 - [src/components/ExportDialog/ExportDialog.css](src/components/ExportDialog/ExportDialog.css) - ダイアログスタイル
 
 **変更ファイル**:
+
 - [src/App.tsx](src/App.tsx) - エクスポートボタン（ダウンロードアイコン）とダイアログ追加
 - [src/App.css](src/App.css) - export-buttonスタイル
 
 **技術的ハイライト**:
+
 ```typescript
 // Excel対応のCSVエクスポート
 const bom = '\uFEFF'; // UTF-8 BOM
@@ -185,6 +207,7 @@ const escapeCSV = (text: string) => {
 #### 2.4 アクセシビリティ改善 ♿ ✅
 
 **実装内容**:
+
 - WAI-ARIA属性の包括的な追加
 - キーボードナビゲーション完全対応（Enter/Spaceキー）
 - スクリーンリーダー対応の改善
@@ -192,6 +215,7 @@ const escapeCSV = (text: string) => {
 - ローディング状態とエラーのaria-live通知
 
 **変更ファイル**:
+
 - [src/App.tsx](src/App.tsx) - skip-to-content, role属性, aria属性追加
 - [src/App.css](src/App.css) - skip-to-contentスタイル（focus時に表示）
 - [src/components/EntryForm/EntryForm.tsx](src/components/EntryForm/EntryForm.tsx) - aria-label, aria-describedby, aria-invalid, aria-live追加
@@ -199,6 +223,7 @@ const escapeCSV = (text: string) => {
 - [src/components/EntryList/EntryList.tsx](src/components/EntryList/EntryList.tsx) - キーボードナビゲーション, role属性追加
 
 **ARIA属性の使用例**:
+
 ```typescript
 // タブインターフェース
 <nav role="tablist" aria-label="ビュー切り替え">
@@ -223,11 +248,13 @@ onKeyDown={(e) => {
 **ブランチ**: `feat/sprint2-ux-improvements`
 **コミット**: `43186f4`
 **統計**:
+
 - 32ファイル変更
 - +2,056行追加
 - -300行削除
 
 **コミットメッセージ**:
+
 ```
 feat: Sprint 2 - UX改善機能の実装
 
@@ -287,6 +314,7 @@ feat: Sprint 2 - UX改善機能の実装
 #### 1. Service Worker二重登録エラー ❌→✅
 
 **エラー**:
+
 ```
 The script has an unsupported MIME type ('text/html')
 Service Worker registration failed: SecurityError
@@ -306,6 +334,7 @@ Service Worker registration failed: SecurityError
 #### 2. PWAアイコン404エラー ❌→✅
 
 **エラー**:
+
 ```
 Error while trying to use the following icon from the Manifest:
 http://127.0.0.1:5173/icons/icon-192x192.png
@@ -323,6 +352,7 @@ http://127.0.0.1:5173/icons/icon-192x192.png
 #### 3. CORSエラー（127.0.0.1） ❌→✅
 
 **エラー**:
+
 ```
 Access to fetch at 'http://localhost:8787/api/comment' from origin 'http://127.0.0.1:5173'
 has been blocked by CORS policy
@@ -402,6 +432,7 @@ has been blocked by CORS policy
 ## 🚀 Sprint 3: パフォーマンス + リファクタ（完了）
 
 ### 実装期間
+
 2026-01-07（1日）
 
 ### 完了した作業
@@ -413,23 +444,28 @@ has been blocked by CORS policy
 **実装内容**:
 
 **Phase 1: ビュー・編集状態の分離**
+
 - [src/hooks/useEntryView.ts](src/hooks/useEntryView.ts) - activeViewとselectedEntryの管理（37行）
 - [src/hooks/useEntryEditing.ts](src/hooks/useEntryEditing.ts) - editingEntryとdeleteConfirmEntryの管理（34行）
 
 **Phase 2: useEntriesの部分更新ロジック**
+
 - [src/hooks/useEntries.ts](src/hooks/useEntries.ts) - `saveItemComment`と`markItemCommentRequested`の全件読み込み（`loadAllEntries()`）を削除
 - 該当エントリーのみ部分更新するロジックに変更（`setAllEntries`で`findIndex` + `map`）
 
 **Phase 3: コメント管理の集約**
+
 - [src/hooks/useCommentManagement.ts](src/hooks/useCommentManagement.ts) - AIコメント取得・保存の複雑なロジックを集約（142行）
 - refreshTrigger不要の理由: useEntriesの部分更新により自動的にReactが再レンダリング
 
 **Phase 4: App.tsx統合とrefreshTrigger削除**
+
 - 3つのカスタムフックを統合
 - refreshTrigger完全削除（6箇所のsetRefreshTriggerをすべて削除）
 - 全ハンドラーをuseCallbackで最適化
 
 **削減効果**:
+
 - **App.tsx**: 362行 → 271行（**-25%、91行削減**）
 
 ---
@@ -437,16 +473,19 @@ has been blocked by CORS policy
 #### 3.2 パフォーマンス最適化 ✅
 
 **Phase 5: React.memo化**
+
 - [src/components/EntryForm/EntryForm.tsx](src/components/EntryForm/EntryForm.tsx) - React.memo化
 - [src/components/AiComment/AiComment.tsx](src/components/AiComment/AiComment.tsx) - AiCommentItemをReact.memo化
 - [src/components/EntryList/EntryList.tsx](src/components/EntryList/EntryList.tsx) - React.memo化
 
 **useMemo/useCallback活用**:
+
 - formatDate関数（useCallback化）
 - entryItems（useMemo化）
 - 全ハンドラー（handleSaveEntry, handleUpdateEntry, handleSelectEntry等）
 
 **パフォーマンス改善**:
+
 - **DB I/O削減**: 3項目コメント追加時 300件読み込み → 0件（**-100%**）
 - **再レンダリング削減**: 50-75%削減見込み
   - 1項目コメント追加: 3コンポーネント → 1コンポーネント（-67%）
@@ -462,6 +501,7 @@ has been blocked by CORS policy
 **コミット**: 実装完了
 
 **変更統計**:
+
 - 新規ファイル: 3つ（useEntryView, useEntryEditing, useCommentManagement）
 - 変更ファイル: 6つ（App.tsx, useEntries.ts, EntryForm.tsx, AiCommentItem.tsx, EntryList.tsx）
 - refreshTrigger削除: 6箇所
@@ -481,6 +521,7 @@ has been blocked by CORS policy
 ### 技術的ハイライト
 
 **1. refreshTrigger削除の仕組み**
+
 ```typescript
 // Before: 手動で再レンダリングをトリガー
 await saveItemComment(date, index, comment);
@@ -492,6 +533,7 @@ await saveItemComment(date, index, comment);
 ```
 
 **2. 部分更新ロジック**
+
 ```typescript
 // 該当エントリーのみ部分更新（全件読み込みを回避）
 setAllEntries(prevEntries => {
@@ -504,6 +546,7 @@ setAllEntries(prevEntries => {
 ```
 
 **3. React.memo化の効果**
+
 ```typescript
 export const AiCommentItem = memo(function AiCommentItem({ ... }) {
   // 3項目のうち1つだけ更新されても、残り2つは再レンダリングされない
@@ -527,12 +570,14 @@ export const AiCommentItem = memo(function AiCommentItem({ ... }) {
 ### 4.1 統計・インサイト表示
 
 **実装内容**:
+
 1. 記録連続日数（ストリーク）
 2. 総記録数
 3. 月間カレンダービュー（記録した日をハイライト）
 4. よく使う言葉の頻出ワード表示（簡易版）
 
 **新規ファイル**:
+
 - `/src/components/Stats/StatsView.tsx` - 統計表示画面
 - `/src/components/Stats/StreakCounter.tsx` - ストリークカウンター
 - `/src/components/Stats/MonthlyCalendar.tsx` - 月間カレンダー
@@ -540,6 +585,7 @@ export const AiCommentItem = memo(function AiCommentItem({ ... }) {
 - `/src/utils/statsCalculator.ts` - 統計計算ロジック
 
 **変更ファイル**:
+
 - [src/App.tsx](src/App.tsx) - 統計ビュー追加（3つ目のタブ）
 
 **期待効果**: 継続率+25%見込み
@@ -547,15 +593,18 @@ export const AiCommentItem = memo(function AiCommentItem({ ... }) {
 ### 4.2 リマインダー機能（オプション）
 
 **実装内容**:
+
 1. 毎日決まった時間にプッシュ通知
 2. Service Worker経由
 3. 通知設定画面
 
 **新規ファイル**:
+
 - `/src/components/Settings/SettingsView.tsx`
 - `/src/hooks/useNotifications.ts`
 
 **変更ファイル**:
+
 - `/src/sw.js` - プッシュ通知ハンドラ追加
 
 ---
@@ -589,11 +638,13 @@ VITE_API_ENDPOINT="http://localhost:8787"
 ### 3. 開発サーバーの起動
 
 **ターミナル1** - Cloudflare Workers:
+
 ```bash
 npm run workers:dev
 ```
 
 **ターミナル2** - フロントエンド:
+
 ```bash
 npm run dev
 ```
@@ -614,6 +665,7 @@ npm run workers:deploy
 ### 完了 ✅
 
 **Sprint 1** (セキュリティ修正 + コード品質向上):
+
 - [x] Cloudflare Workers実装（セキュリティ修正）
 - [x] Logger実装 + console.log削除
 - [x] テスト修正（82%パス率達成）
@@ -621,6 +673,7 @@ npm run workers:deploy
 - [x] README更新（セットアップ手順、セキュリティセクション）
 
 **Sprint 2** (UX改善の基盤):
+
 - [x] ダークモード実装
 - [x] エントリー編集・削除機能
 - [x] データエクスポート機能
@@ -629,14 +682,17 @@ npm run workers:deploy
 ### 次のステップ 📝
 
 **Sprint 3** (パフォーマンス + リファクタ):
+
 - [ ] App.tsxリファクタリング
 - [ ] パフォーマンス最適化
 
 **Sprint 4** (エンゲージメント機能):
+
 - [ ] 統計・インサイト表示
 - [ ] リマインダー機能（オプション）
 
 ### テスト状況
+
 - **現在**: 41/50 tests passing (82%)
 - **残課題**: 9件のReact act()警告とタイムアウト（機能的な問題なし）
 
