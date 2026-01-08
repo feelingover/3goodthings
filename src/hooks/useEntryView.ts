@@ -1,25 +1,27 @@
 import { useState, useEffect } from 'react';
 import type { DailyEntry } from '../types';
 
+export type ViewType = 'today' | 'history' | 'stats';
+
 export interface UseEntryViewReturn {
-  activeView: 'today' | 'history';
+  activeView: ViewType;
   selectedEntry: DailyEntry | null;
-  setActiveView: (view: 'today' | 'history') => void;
+  setActiveView: (view: ViewType) => void;
   selectEntry: (entry: DailyEntry | null) => void;
   clearSelection: () => void;
 }
 
 /**
  * ビュー管理フック
- * activeView（today/history）とselectedEntryの状態を管理する
+ * activeView（today/history/stats）とselectedEntryの状態を管理する
  */
 export function useEntryView(): UseEntryViewReturn {
-  const [activeView, setActiveView] = useState<'today' | 'history'>('today');
+  const [activeView, setActiveView] = useState<ViewType>('today');
   const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null);
 
-  // activeViewが'today'に変わったら自動でselectedEntryをクリア
+  // activeViewが'today'または'stats'に変わったら自動でselectedEntryをクリア
   useEffect(() => {
-    if (activeView === 'today') {
+    if (activeView === 'today' || activeView === 'stats') {
       setSelectedEntry(null);
     }
   }, [activeView]);

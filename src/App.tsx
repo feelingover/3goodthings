@@ -4,6 +4,7 @@ import { EntryList } from './components/EntryList/EntryList';
 import { ThemeToggle } from './components/ThemeToggle/ThemeToggle';
 import { ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
 import { ExportDialog } from './components/ExportDialog/ExportDialog';
+import { StatsView } from './components/StatsView/StatsView';
 import { useEntries } from './hooks/useEntries';
 import { useEntryView } from './hooks/useEntryView';
 import { useEntryEditing } from './hooks/useEntryEditing';
@@ -157,6 +158,16 @@ function App() {
         >
           履歴
         </button>
+        <button
+          id="stats-tab"
+          className={`view-button ${activeView === 'stats' ? 'active' : ''}`}
+          onClick={() => setActiveView('stats')}
+          role="tab"
+          aria-selected={activeView === 'stats'}
+          aria-controls="stats-panel"
+        >
+          統計
+        </button>
       </nav>
 
       {activeView === 'today' && (
@@ -215,7 +226,7 @@ function App() {
           {selectedEntry && (
             <div className="selected-entry">
               <h2>{formatDate(selectedEntry.date)}の記録</h2>
-              
+
               <div className="entry-items-with-comments">
                 {selectedEntry.items.map((item, index) => (
                   <div key={index} className="entry-item-with-comment">
@@ -223,7 +234,7 @@ function App() {
                       <div className="item-number">{index + 1}.</div>
                       <div className="item-content">{item.content}</div>
                     </div>
-                    
+
                     <div className="item-comment">
                       <AiCommentItem
                         key={`${selectedEntry.date}-item-${index}`}
@@ -241,6 +252,17 @@ function App() {
             </div>
           )}
           </div>
+        </main>
+      )}
+
+      {activeView === 'stats' && (
+        <main
+          id="main-content"
+          className="stats-view-container"
+          role="tabpanel"
+          aria-labelledby="stats-tab"
+        >
+          <StatsView entries={allEntries} isLoading={isLoading} />
         </main>
       )}
 

@@ -1,0 +1,165 @@
+/* StatsView - Material Design 3準拠 */
+
+.stats-view {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.stats-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--md-on-background);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* ローディング状態 */
+.stats-view.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--md-on-surface-variant);
+}
+
+/* プライマリカード（ストリーク） */
+.stat-card.primary-card {
+  background: linear-gradient(135deg, var(--md-primary) 0%, var(--md-primary-dark) 100%);
+  color: var(--md-on-primary);
+  padding: 2rem;
+  border-radius: 24px;
+  box-shadow: var(--md-shadow-2);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  transition: transform var(--md-transition-standard), box-shadow var(--md-transition-standard);
+}
+
+.stat-card.primary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--md-shadow-3);
+}
+
+.primary-card .stat-icon {
+  font-size: 4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.primary-card .stat-label {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.primary-card .stat-value.large {
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.primary-card .stat-unit {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-left: 0.25rem;
+}
+
+.primary-card .stat-description {
+  font-size: 0.95rem;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+/* サブ統計グリッド */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* サブカード */
+.stat-card {
+  background-color: var(--md-surface);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: var(--md-shadow-1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform var(--md-transition-standard), box-shadow var(--md-transition-standard);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--md-shadow-2);
+}
+
+.stat-icon.small {
+  font-size: 2.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--md-on-surface-variant);
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  line-height: 1;
+}
+
+.stat-unit {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--md-on-surface-variant);
+  margin-left: 0.25rem;
+}
+
+/* エンプティステート */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  margin-top: 2rem;
+  background-color: var(--md-surface);
+  border-radius: 16px;
+  box-shadow: var(--md-shadow-1);
+}
+
+.empty-message {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  margin-bottom: 0.5rem;
+}
+
+.empty-description {
+  font-size: 1rem;
+  color: var(--md-on-surface-variant);
+  line-height: 1.5;
+}
+
+/* ダークテーマ対応 */
+:root[data-theme="dark"] .stat-card.primary-card {
+  background: linear-gradient(135deg, var(--md-primary-light) 0%, var(--md-primary) 100%);
+}
