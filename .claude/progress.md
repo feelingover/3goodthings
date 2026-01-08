@@ -837,31 +837,173 @@ test('編集中に削除確認を開くことができる（状態競合のテ�
 
 ---
 
-## 📊 Sprint 4: エンゲージメント機能（計画中）
+## 🎉 Sprint 4: エンゲージメント機能（完了）
 
-### 4.1 統計・インサイト表示
+### 実装期間
+2026-01-08（1日）
 
-**実装内容**:
-1. 記録連続日数（ストリーク）
-2. 総記録数
-3. 月間カレンダービュー（記録した日をハイライト）
-4. よく使う言葉の頻出ワード表示（簡易版）
+### 完了した作業
 
-**新規ファイル**:
-- `/src/components/Stats/StatsView.tsx` - 統計表示画面
-- `/src/components/Stats/StreakCounter.tsx` - ストリークカウンター
-- `/src/components/Stats/MonthlyCalendar.tsx` - 月間カレンダー
-- `/src/components/Stats/Stats.css`
-- `/src/utils/statsCalculator.ts` - 統計計算ロジック
-
-**変更ファイル**:
-- [src/App.tsx](src/App.tsx) - 統計ビュー追加（3つ目のタブ）
-
-**期待効果**: 継続率+25%見込み
-
-### 4.2 リマインダー機能（オプション）
+#### 4.1 統計・インサイト表示（Phase 1）✅
 
 **実装内容**:
+- 連続記録日数（ストリーク）カウンター 🔥
+- 総記録日数表示 📅
+- 記録した良いこと（総項目数）✨
+- 今週の記録数 📊
+- 今月の記録数 📆
+
+**新規ファイル（5つ）**:
+- [src/utils/statsCalculator.ts](src/utils/statsCalculator.ts) - 統計計算ロジック（5つの計算関数）
+- [src/components/StatsView/StatsView.tsx](src/components/StatsView/StatsView.tsx) - 統計表示コンポーネント
+- [src/components/StatsView/StatsView.css](src/components/StatsView/StatsView.css) - Material Design 3スタイル
+- [src/utils/__tests__/statsCalculator.test.ts](src/utils/__tests__/statsCalculator.test.ts) - ユニットテスト（11テスト）
+- [src/components/StatsView/__tests__/StatsView.test.tsx](src/components/StatsView/__tests__/StatsView.test.tsx) - コンポーネントテスト（5テスト）
+
+**変更ファイル（3つ）**:
+- [src/hooks/useEntryView.ts](src/hooks/useEntryView.ts) - ViewTypeに'stats'を追加（3タブ対応）
+- [src/App.tsx](src/App.tsx) - 統計タブとStatsView統合
+- [src/App.css](src/App.css) - 3タブ対応スタイル調整
+
+**統計計算ロジック**:
+```typescript
+// 連続記録日数（ストリーク）
+calculateStreak(entries): number
+  - 今日または昨日から連続して記録している日数を計算
+  - 今日も昨日も記録がない場合は0を返す
+
+// 総記録日数
+countTotalEntries(entries): number
+
+// 今週の記録数（日曜日始まり）
+countThisWeekEntries(entries): number
+
+// 今月の記録数
+countThisMonthEntries(entries): number
+
+// 総項目数（1日3項目 × 記録日数）
+countTotalItems(entries): number
+```
+
+**UIデザイン**:
+- **プライマリカード（ストリーク）**: グラデーション背景（紫系）で目立たせる
+- **サブ統計グリッド**: 2×2レイアウトで4つの指標を表示
+- **ホバーエフェクト**: translateY(-4px) + shadow変化
+- **レスポンシブデザイン**: タブレット・スマホ対応
+- **ダークテーマ対応**: プライマリカードのグラデーションが自動切り替え
+- **アクセシビリティ**: ARIA属性、キーボードナビゲーション
+
+**エンプティステート**:
+- 記録がない場合: 「まだ記録がありません」
+- 誘導メッセージ: 「『今日の記録』タブから、今日の良いことを3つ記録してみましょう！」
+
+**技術的ハイライト**:
+```typescript
+// useMemoで統計計算をメモ化（パフォーマンス最適化）
+const stats = useMemo(() => {
+  return {
+    streak: calculateStreak(entries),
+    totalEntries: countTotalEntries(entries),
+    thisWeekEntries: countThisWeekEntries(entries),
+    thisMonthEntries: countThisMonthEntries(entries),
+    totalItems: countTotalItems(entries)
+  };
+}, [entries]);
+```
+
+---
+
+### Git管理
+
+**ブランチ**: `feat/sprint4-stats-view`
+**統計**:
+- 新規ファイル: 5つ
+- 変更ファイル: 3つ
+- 新規テスト: +16テスト
+
+---
+
+### テスト結果
+
+**改善後**:
+- テスト総数: 92 tests (+16 tests)
+- パス率: **100%** (92/92 tests)
+- 失敗: 0 tests
+
+**新規テスト内訳**:
+- statsCalculator: 11 tests
+  - calculateStreak: 5 tests（今日記録あり、昨日記録あり、記録なし、空配列、連続でない記録）
+  - countTotalEntries: 2 tests
+  - countTotalItems: 2 tests
+  - countThisWeekEntries: 1 test
+  - countThisMonthEntries: 1 test
+- StatsView: 5 tests
+  - ローディング状態
+  - 統計データ表示
+  - ストリーク0の場合
+  - エンプティステート
+  - ARIA属性
+
+---
+
+### 成功基準の達成
+
+✅ 統計タブが「今日/履歴」と同じパターンで実装されている
+✅ ストリーク計算が正確（今日/昨日の記録に基づく）
+✅ 総記録数・今週・今月の統計が正確
+✅ Material Design 3のスタイルが適用されている
+✅ ダークモードで正常に表示される
+✅ ARIA属性が適切に設定されている
+✅ テストが全パスする（100%）
+✅ TypeScriptエラーがない
+✅ 本番ビルドが成功する
+
+---
+
+### 期待効果
+
+- 継続率 +25% 見込み
+- ユーザーエンゲージメント向上
+- ポジティブな習慣化の促進
+- 記録する動機づけの強化
+
+---
+
+### 学んだこと
+
+**統計計算の設計**:
+- **日付処理の標準化**: YYYY-MM-DD形式で統一することで、文字列比較で正確に日付順序を取得可能
+- **ストリーク計算のロジック**: 今日または昨日に記録がない場合はストリーク0とすることで、直感的な動作を実現
+- **useMemoによる最適化**: 統計計算は重い処理になる可能性があるため、メモ化が重要
+
+**Material Design 3の活用**:
+- **グラデーション背景**: プライマリカラーの濃淡でグラデーションを作ることで、視覚的に目立つカードを実現
+- **エレベーション**: ホバー時にtranslateYとshadowを変化させることで、インタラクティブな体験を提供
+- **グリッドレイアウト**: repeat(auto-fit, minmax())を使うことで、柔軟なレスポンシブデザインを実現
+
+**テスト設計**:
+- **境界値テストの重要性**: ストリーク計算では、今日記録あり/昨日記録あり/記録なしの3パターンをテスト
+- **日付依存のテスト**: 今週・今月のテストは、動的に日付を生成することで、いつ実行しても正しくテストできる
+
+---
+
+### 将来の拡張（Phase 2, 3）
+
+**Phase 2: 月間カレンダービュー**（将来実装）:
+- カレンダーグリッド（7×6）
+- 記録した日をハイライト表示
+- 月切り替えボタン
+
+**Phase 3: 頻出ワード表示**（将来実装）:
+- テキスト解析（MeCab.js or kuromoji.js）
+- 頻出ワードトップ10リスト
+- シンプルなリスト表示（簡易版）
+
+---
+
+### 4.2 リマインダー機能（オプション・未実装）
+
+**実装内容**（将来実装予定）:
 1. 毎日決まった時間にプッシュ通知
 2. Service Worker経由
 3. 通知設定画面
@@ -895,23 +1037,27 @@ test('編集中に削除確認を開くことができる（状態競合のテ�
 **Sprint 3** (パフォーマンス + リファクタ):
 - [x] App.tsxリファクタリング
 - [x] パフォーマンス最適化
-
-### 次のステップ 📝
+- [x] テスト拡充（97%パス率達成）
 
 **Sprint 4** (エンゲージメント機能):
-- [ ] 統計・インサイト表示
-- [ ] リマインダー機能（オプション）
+- [x] 統計・インサイト表示（Phase 1）
+- [ ] 月間カレンダービュー（Phase 2・将来実装）
+- [ ] 頻出ワード表示（Phase 3・将来実装）
+- [ ] リマインダー機能（オプション・将来実装）
 
 ### テスト状況
-- **現在**: 41/50 tests passing (82%)
-- **残課題**: 9件のReact act()警告とタイムアウト（機能的な問題なし）
+- **現在**: 92/92 tests passing (**100%**)
+- **新規テスト**: +16 tests（statsCalculator + StatsView）
+- **残課題**: なし
 
 ---
 
-## 🎯 実装の優先順位
+## 🎯 次のステップ
 
-1. **Sprint 4** (エンゲージメント) - 計画中
-   - 統計表示 → リマインダー（オプション）
+**Phase 2 & 3 の実装** (オプション):
+- 月間カレンダービュー（記録した日をハイライト）
+- 頻出ワード表示（よく使う言葉のトップ10）
+- リマインダー機能（プッシュ通知）
 
 ---
 
@@ -919,5 +1065,6 @@ test('編集中に削除確認を開くことができる（状態競合のテ�
 
 - 各Sprint完了後はテスト実行・動作確認を実施
 - Git commitは論理的な単位で分割
+- Sprint 4 Phase 1完了により、基本的なエンゲージメント機能が実装完了
 
-**最終更新**: 2026-01-07
+**最終更新**: 2026-01-08
