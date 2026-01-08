@@ -51,22 +51,54 @@ jest.mock('../hooks/useNetworkStatus', () => ({
 // 日付のモック
 const mockDate = new Date('2025-05-16');
 const mockDateString = '2025-05-16';
-global.Date = jest.fn(() => mockDate) as any;
+const OriginalDate = Date;
+
+global.Date = class extends OriginalDate {
+  constructor(...args: any[]) {
+    super();
+    if (args.length > 0) {
+      return new OriginalDate(...args as [any]);
+    }
+    return mockDate;
+  }
+
+  static now() {
+    return mockDate.getTime();
+  }
+} as any;
+
 (global.Date as any).toISOString = jest.fn(() => mockDateString + 'T00:00:00.000Z');
 
 describe('インテグレーションテスト', () => {
+  let mockDb: Record<string, any> = {};
+
   beforeEach(() => {
     jest.clearAllMocks();
+    mockDb = {};
 
     // デフォルトのモック実装
-    (db.getAllDailyEntries as jest.Mock).mockResolvedValue([]);
-    (db.getDailyEntryByDate as jest.Mock).mockResolvedValue(null);
+    (db.getAllDailyEntries as jest.Mock).mockImplementation(() => {
+      return Promise.resolve(Object.values(mockDb));
+    });
+    
+    (db.getDailyEntryByDate as jest.Mock).mockImplementation((date) => {
+      return Promise.resolve(mockDb[date] || null);
+    });
+
     (db.saveDailyEntry as jest.Mock).mockImplementation((entry) => {
+      mockDb[entry.date] = entry;
       if (entry.id) {
         return Promise.resolve(entry.id);
       } else {
         return Promise.resolve(1);
       }
+    });
+
+    (db.updateDailyEntry as jest.Mock).mockImplementation((date, items) => {
+      if (mockDb[date]) {
+        mockDb[date].items = items;
+      }
+      return Promise.resolve();
     });
 
     // fetchのモック実装（Cloudflare Workers APIレスポンス）
@@ -264,11 +296,8 @@ describe('インテグレーションテスト', () => {
     // console.errorのスパイを設定
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    // fetchが失敗するようにモック（Cloudflare Workers APIエラー）
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      json: async () => ({ error: 'APIエラー' })
-    });
+    // AIコメント取得が失敗するようにモック
+    (openaiService.getAiCommentForItem as jest.Mock).mockRejectedValue(new Error('APIエラー'));
 
     render(<App />);
 
