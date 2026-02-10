@@ -1,16 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { DailyEntry, EntryItem } from '../types';
 import { db } from '../db/database';
-
-// 日付をYYYY-MM-DD形式の文字列に変換
-const formatDate = (date: Date): string => {
-  return date.toISOString().split('T')[0];
-};
-
-// 今日の日付を取得
-const getTodayDate = (): string => {
-  return formatDate(new Date());
-};
+import { getTodayDateString } from '../utils/dateFormat';
 
 interface UseEntriesReturn {
   todayEntry: DailyEntry | null;
@@ -47,9 +38,9 @@ export function useEntries(): UseEntriesReturn {
   // 今日のエントリーを読み込む
   const loadTodayEntry = useCallback(async () => {
     try {
-      const today = getTodayDate();
+      const today = getTodayDateString();
       const entry = await db.getDailyEntryByDate(today);
-      
+
       if (entry) {
         setTodayEntry(entry);
       } else {
@@ -70,17 +61,17 @@ export function useEntries(): UseEntriesReturn {
   }, [loadTodayEntry, loadAllEntries]);
 
   // エントリーを保存する
-  const saveEntry = async (items: string[]): Promise<DailyEntry> => {
+  const saveEntry = useCallback(async (items: string[]): Promise<DailyEntry> => {
     try {
-      const date = getTodayDate();
+      const date = getTodayDateString();
       let entry = await db.getDailyEntryByDate(date);
-      
+
       const entryItems: EntryItem[] = items.map((content) => ({
         content,
         createdAt: new Date(),
         hasRequestedComment: false
       }));
-      
+
       if (entry) {
         entry.items = entryItems;
       } else {
@@ -89,22 +80,22 @@ export function useEntries(): UseEntriesReturn {
           items: entryItems
         };
       }
-      
+
       await db.saveDailyEntry(entry);
-      
+
       // 再読み込み
       await loadTodayEntry();
       await loadAllEntries();
-      
+
       return entry;
     } catch (err) {
       setError(err as Error);
       throw err;
     }
-  };
+  }, [loadTodayEntry, loadAllEntries]);
 
   // 特定の日付のエントリーを取得
-  const getEntryByDate = async (date: string): Promise<DailyEntry | null> => {
+  const getEntryByDate = useCallback(async (date: string): Promise<DailyEntry | null> => {
     try {
       const entry = await db.getDailyEntryByDate(date);
       return entry || null;
@@ -112,11 +103,11 @@ export function useEntries(): UseEntriesReturn {
       setError(err as Error);
       throw err;
     }
-  };
+  }, []);
 
-  
+
   // 特定の項目に対するAIコメントを保存
-  const saveItemComment = async (date: string, itemIndex: number, comment: string): Promise<void> => {
+  const saveItemComment = useCallback(async (date: string, itemIndex: number, comment: string): Promise<void> => {
     try {
       const entry = await db.getDailyEntryByDate(date);
 
@@ -128,8 +119,8 @@ export function useEntries(): UseEntriesReturn {
         await db.saveDailyEntry(entry);
 
         // 今日の日付の場合、todayEntryを更新
-        if (date === getTodayDate()) {
-          setTodayEntry({...entry});
+        if (date === getTodayDateString()) {
+          setTodayEntry({ ...entry });
         }
 
         // 該当エントリーのみ部分更新（全件読み込みを回避）
@@ -155,11 +146,11 @@ export function useEntries(): UseEntriesReturn {
       setError(err as Error);
       throw err;
     }
-  };
+  }, []);
 
-  
+
   // 特定の項目のコメントをリクエスト済みとしてマーク
-  const markItemCommentRequested = async (date: string, itemIndex: number): Promise<void> => {
+  const markItemCommentRequested = useCallback(async (date: string, itemIndex: number): Promise<void> => {
     try {
       const entry = await db.getDailyEntryByDate(date);
 
@@ -168,8 +159,8 @@ export function useEntries(): UseEntriesReturn {
         await db.saveDailyEntry(entry);
 
         // 今日の日付の場合、todayEntryを更新
-        if (date === getTodayDate()) {
-          setTodayEntry({...entry});
+        if (date === getTodayDateString()) {
+          setTodayEntry({ ...entry });
         }
 
         // 該当エントリーのみ部分更新（全件読み込みを回避）
@@ -199,15 +190,15 @@ export function useEntries(): UseEntriesReturn {
       setError(err as Error);
       throw err;
     }
-  };
+  }, []);
 
   // エントリーを削除
-  const deleteEntry = async (date: string): Promise<void> => {
+  const deleteEntry = useCallback(async (date: string): Promise<void> => {
     try {
       await db.deleteDailyEntry(date);
 
       // todayEntryが削除された場合は空にする
-      if (date === getTodayDate()) {
+      if (date === getTodayDateString()) {
         setTodayEntry({
           date: date,
           items: []
@@ -220,21 +211,34 @@ export function useEntries(): UseEntriesReturn {
       setError(err as Error);
       throw err;
     }
-  };
+  }, [loadAllEntries]);
 
   // エントリーを更新
-  const updateEntry = async (date: string, items: string[]): Promise<void> => {
+  const updateEntry = useCallback(async (date: string, items: string[]): Promise<void> => {
     try {
-      const entryItems: EntryItem[] = items.map((content) => ({
-        content,
-        createdAt: new Date(),
-        hasRequestedComment: false
-      }));
+      // 既存のエントリーを取得
+      const currentEntry = await db.getDailyEntryByDate(date);
+      const currentItems = currentEntry?.items || [];
+
+      const entryItems: EntryItem[] = items.map((content, index) => {
+        // 内容が同じであれば、既存のコメントとステータスを維持する
+        // インデックスが同じで、かつ内容が一致する場合のみ引き継ぐ
+        // (行の入れ替え等には対応しない簡易的なロジックだが、このUXでは十分)
+        const originalItem = currentItems[index];
+        const isContentSame = originalItem && originalItem.content === content;
+
+        return {
+          content,
+          createdAt: new Date(), // 更新日時として現在時刻を設定
+          aiComment: isContentSame ? originalItem.aiComment : undefined,
+          hasRequestedComment: isContentSame ? originalItem.hasRequestedComment : false
+        };
+      });
 
       await db.updateDailyEntry(date, entryItems);
 
       // todayEntryが更新された場合は再読み込み
-      if (date === getTodayDate()) {
+      if (date === getTodayDateString()) {
         await loadTodayEntry();
       }
 
@@ -244,7 +248,7 @@ export function useEntries(): UseEntriesReturn {
       setError(err as Error);
       throw err;
     }
-  };
+  }, [loadTodayEntry, loadAllEntries]);
 
   return {
     todayEntry,

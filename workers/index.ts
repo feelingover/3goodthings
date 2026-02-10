@@ -22,8 +22,12 @@ function corsHeaders(origin: string, allowedOrigins: string): Headers {
   const headers = new Headers();
   const allowedOriginsList = allowedOrigins.split(',').map(o => o.trim());
 
-  if (allowedOriginsList.includes(origin) || allowedOrigins === '*') {
+  // 許可されたオリジンからのリクエストのみ許可
+  if (allowedOriginsList.includes(origin) || (allowedOrigins === '*' && origin)) {
     headers.set('Access-Control-Allow-Origin', origin);
+  } else if (allowedOrigins === '*' && !origin) {
+    // originヘッダーがない場合は*を返す（開発環境など）
+    headers.set('Access-Control-Allow-Origin', '*');
   }
 
   headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -36,7 +40,8 @@ function corsHeaders(origin: string, allowedOrigins: string): Headers {
 // プリフライトリクエスト（OPTIONS）を処理
 function handleOptions(request: Request, env: Env): Response {
   const origin = request.headers.get('Origin') || '';
-  const allowedOrigins = env.ALLOWED_ORIGINS || '*';
+  // デフォルトは空文字（許可しない）にする。環境変数設定必須。
+  const allowedOrigins = env.ALLOWED_ORIGINS || '';
 
   return new Response(null, {
     status: 204,
@@ -112,7 +117,8 @@ async function getCommentForThree(goodThings: string[], env: Env): Promise<strin
 // メインのリクエストハンドラ
 async function handleRequest(request: Request, env: Env): Promise<Response> {
   const origin = request.headers.get('Origin') || '';
-  const allowedOrigins = env.ALLOWED_ORIGINS || '*';
+  // デフォルトは空文字（つまり拒否）。環境変数で明示的に指定させる。
+  const allowedOrigins = env.ALLOWED_ORIGINS || '';
 
   try {
     // APIキーチェック
@@ -127,16 +133,42 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     }
 
     // リクエストボディを解析
-    const body: CommentRequest = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid headers Content-Type is not application/json' }),
+        {
+          status: 400,
+          headers: corsHeaders(origin, allowedOrigins),
+        }
+      );
+    }
 
     let comment: string;
 
+    // バリデーション定数
+    const MAX_LENGTH = 1000;
+
     // 1つの良いことに対するコメント
     if (body.goodThing) {
+      if (typeof body.goodThing !== 'string') {
+        throw new Error('Invalid input: goodThing must be a string');
+      }
+      if (body.goodThing.length > MAX_LENGTH) {
+        throw new Error(`Invalid input: goodThing must be less than ${MAX_LENGTH} characters`);
+      }
       comment = await getCommentForItem(body.goodThing, env);
     }
     // 3つの良いことに対するコメント
     else if (body.goodThings && Array.isArray(body.goodThings)) {
+      if (!body.goodThings.every((item: any) => typeof item === 'string')) {
+        throw new Error('Invalid input: goodThings must be an array of strings');
+      }
+      if (body.goodThings.some((item: string) => item.length > MAX_LENGTH)) {
+        throw new Error(`Invalid input: items must be less than ${MAX_LENGTH} characters`);
+      }
       comment = await getCommentForThree(body.goodThings, env);
     }
     else {
